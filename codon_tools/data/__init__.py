@@ -5,6 +5,18 @@ _restriction_enzymes = ["NdeI", "XhoI", "HpaI", "PstI", "EcoRV", "NcoI", "BamHI"
 
 
 def get_restriction_enzymes(restriction_enzymes=_restriction_enzymes):
+    """Create a RestrictionBatch instance to search for sites for a supplied
+    list of restriction enzymes.
+
+    Args:
+        restriction_enzymes (list[str], optional): List of restriction
+            enzymes to consider. Defaults to ["NdeI", "XhoI", "HpaI", "PstI",
+            "EcoRV", "NcoI", "BamHI"].
+
+    Returns:
+        Bio.Restriction.Restriction.RestrictionBatch: RestrictionBatch instance
+            configured with the input restriction enzymes.
+    """
     return Restriction.RestrictionBatch(
         [
             getattr(Restriction, enz)

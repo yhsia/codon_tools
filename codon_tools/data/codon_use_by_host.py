@@ -1,8 +1,14 @@
-# 413997 "Escherichia coli B"
-# 83333  "Escherichia coli K-12"
-# 4932   "Saccharomyces cerevisiae"
-# 9606   "Homo sapiens"
+# Species-specifc data can be found on the Codon Usage Database (http://www.kazusa.or.jp)
+# using the NCBI Taxonomy database (http://www.ncbi.nlm.nih.gov/taxonomy) id (e.g. 413997)
+# or the organism's Latin name (e.g. Escherichia coli B).
+# Mapping species names to Taxonomy IDs can be done here:
+#     https://www.ncbi.nlm.nih.gov/Taxonomy/TaxIdentifier/tax_identifier.cgi
 
+# To add new hosts to this file
+# * add the entry to the `latin_name_to_tax_id` dictionary,
+# * make a new dictionary called `codon_use_[NCBI_TAX_ID]`, and
+# * add an entry to the `codon_tables` dictionary with `NCBI_TAX_ID` as the
+#   key and `codon_use_[NCBI_TAX_ID]` as the value.
 latin_name_to_tax_id = {
     "Escherichia coli B": "413997",
     "Escherichia coli K-12": "83333",

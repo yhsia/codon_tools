@@ -148,21 +148,59 @@ def compare_profiles(codons_count, host, relax):
     return table, diff
 
 
-# returns mutated sequence after given a difference profile
-def resample_codons(dna_sequence, codon_use_by_aa):
-    """[summary]
+def mutate_codon(codon_in, codon_use_table):
+    """Select a synonymous codon in accordance with the frequency of use
+    in the host organism.
 
     Args:
-        dna_sequence ([type]): [description]
-        codon_use_by_aa ([type]): [description]
+        codon_in (Bio.Seq.Seq): A single codon.
+        codon_use_table (dict({str : list[list, list]})): A dictionary with
+            each amino acid three-letter code as keys, and a list of two
+            lists as values. The first list is the synonymous codons that
+            encode the amino acid, the second is the frequency with which
+            each synonymous codon is used.
 
     Returns:
-        [type]: [description]
+        Bio.Seq.Seq: A new codon.
     """
+    AA = seq3(CodonTable.standard_dna_table.forward_table[str(codon_in)]).upper()
 
+    synonymous_codons, codon_use_freq = codon_use_table[AA]
+    if len(synonymous_codons) == 1:
+        return codon_in
+
+    # pick new codon
+    codon_out = codon_in
+    while codon_in == codon_out:
+        codon_out = random.choices(synonymous_codons, codon_use_freq).pop()
+
+    logger.detail(
+        "mutating [{0}] codon from {1} to {2}".format(AA, codon_in[1], codon_out)
+    )
+
+    return codon_out
+
+
+def resample_codons(dna_sequence, codon_use_table):
+    """Generate a new DNA sequence by swapping synonymous codons.
+    Codons are selected in accordance with their frequency of occurrence in
+    the host organism.
+
+    Args:
+        dna_sequence (Bio.Seq.Seq): A read-only representation of
+            the DNA sequence.
+        codon_use_table (dict({str : list[list, list]})): A dictionary with
+            each amino acid three-letter code as keys, and a list of two
+            lists as values. The first list is the synonymous codons that
+            encode the amino acid, the second is the frequency with which
+            each synonymous codon is used.
+
+    Returns:
+        Bio.Seq.Seq: A read-only representation of the new DNA sequence.
+    """
     resampled_dna = "".join(
         [
-            random.choices(*codon_use_by_aa[seq3(AA).upper()]).pop()
+            random.choices(*codon_use_table[seq3(AA).upper()]).pop()
             for AA in dna_sequence.translate()
         ]
     )
@@ -170,45 +208,84 @@ def resample_codons(dna_sequence, codon_use_by_aa):
     return Seq(resampled_dna, IUPAC.unambiguous_dna)
 
 
-# check for local homopolymers
-def remove_local_homopolymers(dna_sequence, n_codons=2):
-    logger.info("===== REMOVE LOCAL HOMOPOLYMERS =====")
+def gc_scan(dna_sequence, window_size, low, high):
+    """Scan across a sequence and replace codons to acheive a desired GC
+    content within the window.
+
+    Args:
+        dna_sequence (Bio.Seq.Seq): A read-only representation of
+            the DNA sequence.
+        window_size (int): Size of sliding window (in nucelotides) to
+            examine for GC content. Window sizes can also be expressed
+            as factors of the length of `dna_sequence` by passing a string
+            that begins with "x" (e.g. "x0.5").
+        low (float): Minimum GC content in window.
+        high (float): Maximum GC content in window.
+
+    Returns:
+        Bio.Seq.Seq: A read-only representation of the new DNA sequence.
+    """
+    logger.info(
+        "===== GC CONTENT SCAN IN WINDOW: {0} bps, threshold: {1} < x < {2}=====".format(
+            window_size, low, high
+        )
+    )
+
+    # some windows may be expressed as function of the sequence length
+    if isinstance(window_size, str) and window_size.startswith("x"):
+        window_size = int(float(window_size[1:]) * len(dna_sequence))
+
+    # iterate across overlapping chunks of complete codons
+    codon_window = window_size // 3
+    overlap = codon_window // 2
     mutable_seq = dna_sequence.tomutable()
 
-    # look at each 6-mer
-    keep_looping = True
-    while keep_looping:
-        for i in range(0, len(mutable_seq), 3):
-            window = slice(
-                i,
-                i + (n_codons * 3)
-                if i + (n_codons * 3) < len(mutable_seq)
-                else len(mutable_seq),
-            )
+    # iterate by codon, but map back to sequence-based indices
+    for i in range(0, len(mutable_seq) // 3, (codon_window - overlap) * 3):
+        window = slice(
+            i * 3,
+            (i + codon_window) * 3
+            if (i + codon_window) * 3 < len(mutable_seq)
+            else len(mutable_seq),
+        )
+        logger.debug("Current segment: {0}".format(mutable_seq[window]))
 
-            seq = str(mutable_seq[window])
-            nt_counts = {letter: seq.count(letter) for letter in set(seq)}
-            letter = max(nt_counts, key=lambda letter: nt_counts[letter])
+        gc_percent = GC(mutable_seq[window]) / 100
+        count = 0  # counter to prevent infinite loop
+        # check gc_percent of current segment
+        while (gc_percent < low or gc_percent > high) and count < codon_window * 2:
+            position = random.randrange(0, len(mutable_seq[window]), 3)
+            codon_idx = slice((i * 3) + position, ((i + 1) * 3) + position)
 
-            if nt_counts[letter] <= args.local_homopolymer_threshold:
-                keep_looping = False
-                continue
+            init_codon = mutable_seq[codon_idx]
+            new_codon = mutate_codon(init_codon, codon_use_table)
 
-            logger.detail("position: {0}: {1}".format(i, seq))
-            logger.detail("{0}, count={1}".format(letter, nt_counts[letter]))
+            if (GC(new_codon) < GC(init_codon) and gc_percent > high) or (
+                GC(new_codon) > GC(init_codon) and gc_percent < low
+            ):
+                mutable_seq[codon_idx] = new_codon
+                logger.debug("Mutating position: {0}".format(position))
+                gc_percent = GC(mutable_seq[window]) / 100
 
-            for j in range(n_codons):
-                codon_idx = slice(i + (j * 3), i + ((j + 1) * 3))
-                mutable_seq[codon_idx] = mutate_codon(
-                    mutable_seq[codon_idx], codon_use_table
-                )
-            keep_looping = True
+            count += 1
 
     return mutable_seq.toseq()
 
 
-# check for unwanted restriction sites
 def remove_restriction_sites(dna_sequence, restrict_sites):
+    """Identify and remove seuences recognized by a set of restriction
+    enzymes.
+
+    Args:
+        dna_sequence (Bio.Seq.Seq): A read-only representation of
+            the DNA sequence.
+        restrict_sites (Bio.Restriction.RestrictionBatch): RestrictionBatch
+            instance configured with the input restriction enzymes.
+
+    Returns:
+        Bio.Seq.Seq: A read-only representation of the new DNA sequence.
+    """
+
     logger.info("===== REMOVE RESTRICTION SITES =====")
 
     # check each unwanted restriction site
@@ -238,8 +315,23 @@ def remove_restriction_sites(dna_sequence, restrict_sites):
     return mutable_seq.toseq()
 
 
-# check for alternative start sites
 def remove_start_sites(dna_sequence, ribosome_binding_sites, table_name="Standard"):
+    """Identify and remove alternate start sites using a supplied set of
+    ribosome binding sites and a codon table name.
+
+    Args:
+        dna_sequence (Bio.Seq.Seq): A read-only representation of
+            the DNA sequence.
+        ribosome_binding_sites (dict({str : str})): A dictionary with named
+            ribosome binding sites as keys and the corresponding sequences
+            as values.
+        table_name (str, optional): Name of a registered NCBI table. See
+            `Bio.Data.CodonTable.unambiguous_dna_by_name.keys()` for
+            options. Defaults to "Standard".
+
+    Returns:
+        Bio.Seq.Seq: A read-only representation of the new DNA sequence.
+    """
 
     codon_table = CodonTable.unambiguous_dna_by_name[table_name]
     logger.info(
@@ -306,78 +398,20 @@ def remove_start_sites(dna_sequence, ribosome_binding_sites, table_name="Standar
     return mutable_seq.toseq()
 
 
-# mutate single codon
-def mutate_codon(codon_in, codon_use_table):
-    AA = seq3(CodonTable.standard_dna_table.forward_table[str(codon_in)]).upper()
-
-    synonymous_codons, codon_use_freq = codon_use_table[AA]
-    if len(synonymous_codons) == 1:
-        return codon_in
-
-    # pick new codon
-    codon_out = codon_in
-    while codon_in == codon_out:
-        codon_out = random.choices(synonymous_codons, codon_use_freq).pop()
-
-    logger.detail(
-        "mutating [{0}] codon from {1} to {2}".format(AA, codon_in[1], codon_out)
-    )
-
-    return codon_out
-
-
-# check GC content
-def gc_scan(dna_sequence, window_size, low, high):
-    logger.info(
-        "===== GC CONTENT SCAN IN WINDOW: {0} bps, threshold: {1} < x < {2}=====".format(
-            window_size, low, high
-        )
-    )
-
-    # some windows may be expressed as function of the sequence length
-    # for example, "x0.5"
-    if isinstance(window_size, str) and window_size.startswith("x"):
-        window_size = int(float(window_size[1:]) * len(dna_sequence))
-
-    # iterate across overlapping chunks of complete codons
-    codon_window = window_size // 3
-    overlap = codon_window // 2
-    mutable_seq = dna_sequence.tomutable()
-
-    # iterate by codon, but map back to sequence-based indices
-    for i in range(0, len(mutable_seq) // 3, (codon_window - overlap) * 3):
-        window = slice(
-            i * 3,
-            (i + codon_window) * 3
-            if (i + codon_window) * 3 < len(mutable_seq)
-            else len(mutable_seq),
-        )
-        logger.debug("Current segment: {0}".format(mutable_seq[window]))
-
-        gc_percent = GC(mutable_seq[window]) / 100
-        count = 0  # counter to prevent infinite loop
-        # check gc_percent of current segment
-        while (gc_percent < low or gc_percent > high) and count < codon_window * 2:
-            position = random.randrange(0, len(mutable_seq[window]), 3)
-            codon_idx = slice((i * 3) + position, ((i + 1) * 3) + position)
-
-            init_codon = mutable_seq[codon_idx]
-            new_codon = mutate_codon(init_codon, codon_use_table)
-
-            if (GC(new_codon) < GC(init_codon) and gc_percent > high) or (
-                GC(new_codon) > GC(init_codon) and gc_percent < low
-            ):
-                mutable_seq[codon_idx] = new_codon
-                logger.debug("Mutating position: {0}".format(position))
-                gc_percent = GC(mutable_seq[window]) / 100
-
-            count += 1
-
-    return mutable_seq.toseq()
-
-
-# check for repeat segments
 def remove_repeating_sequences(dna_sequence, window_size):
+    """Idenify and remove repeating sequences of codons or groups of
+    codons within a DNA sequence.
+
+    Args:
+        dna_sequence (Bio.Seq.Seq): A read-only representation of
+            the DNA sequence.
+        window_size (int): Size the window (in nucleotides) to examine.
+            Window sizes are adjusted down to the nearest multiple of 3 so
+            windows only contain complete codons.
+
+    Returns:
+        Bio.Seq.Seq: A read-only representation of the new DNA sequence.
+    """
     logger.info(
         "===== REPEAT FRAGMENT SCAN FOR SIZE: {0} bps =====".format(window_size)
     )
@@ -438,6 +472,54 @@ def remove_repeating_sequences(dna_sequence, window_size):
                 keep_looping = _mutate_and_keep_looping(mutable_seq, window, (i * 3))
 
         current_cycle += 1
+
+    return mutable_seq.toseq()
+
+
+def remove_local_homopolymers(dna_sequence, n_codons=2):
+    """Identify and remove consecutive streches of the same nucleotides
+    using a sliding window of a fixed number of codons.
+
+    Args:
+        dna_sequence (Bio.Seq.Seq): A read-only representation of
+            the DNA sequence.
+        n_codons (int, optional): Size of window (in codons) to examine.
+            Defaults to 2.
+
+    Returns:
+        Bio.Seq.Seq: A read-only representation of the new DNA sequence.
+    """
+    logger.info("===== REMOVE LOCAL HOMOPOLYMERS =====")
+    mutable_seq = dna_sequence.tomutable()
+
+    # look at each 6-mer
+    keep_looping = True
+    while keep_looping:
+        for i in range(0, len(mutable_seq), 3):
+            window = slice(
+                i,
+                i + (n_codons * 3)
+                if i + (n_codons * 3) < len(mutable_seq)
+                else len(mutable_seq),
+            )
+
+            seq = str(mutable_seq[window])
+            nt_counts = {letter: seq.count(letter) for letter in set(seq)}
+            letter = max(nt_counts, key=lambda letter: nt_counts[letter])
+
+            if nt_counts[letter] <= args.local_homopolymer_threshold:
+                keep_looping = False
+                continue
+
+            logger.detail("position: {0}: {1}".format(i, seq))
+            logger.detail("{0}, count={1}".format(letter, nt_counts[letter]))
+
+            for j in range(n_codons):
+                codon_idx = slice(i + (j * 3), i + ((j + 1) * 3))
+                mutable_seq[codon_idx] = mutate_codon(
+                    mutable_seq[codon_idx], codon_use_table
+                )
+            keep_looping = True
 
     return mutable_seq.toseq()
 

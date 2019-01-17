@@ -22,7 +22,7 @@ def count_codons(dna_sequence):
     codons_dict = CodonUsage.CodonsDict.copy()
     for codon_start in range(0, len(dna_sequence), 3):
         codon_idx = slice(codon_start, codon_start + 3)
-        codons_dict[dna_sequence[codon_idx]] += 1
+        codons_dict[str(dna_sequence[codon_idx])] += 1
 
     return codons_dict
 

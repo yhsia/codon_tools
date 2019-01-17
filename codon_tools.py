@@ -417,7 +417,7 @@ def remove_repeating_sequences(dna_sequence, window_size):
 
             # make each mutable codon immutable so it can be hashed later
             codons = [
-                mutable_seq[window][i : i + 3].toseq()
+                str(mutable_seq[window][i : i + 3])
                 for i in range(0, len(mutable_seq[window]), 3)
             ]
 

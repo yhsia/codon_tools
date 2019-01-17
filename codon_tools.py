@@ -457,7 +457,9 @@ logger.info("Total number of sequences: {0}".format(len(records)))
 [logger.detail(record) for record in records]
 
 # generate host profile
-codon_use_table, codoon_relative_adativeness = codon_use.host_codon_usage(args.host)
+codon_use_table, codoon_relative_adativeness = codon_use.host_codon_usage(
+    args.host, args.host_threshold
+)
 
 # process through all supplied sequences
 for count, record in enumerate(records):

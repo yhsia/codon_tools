@@ -5,8 +5,18 @@ from ..data.codon_use_by_host import codon_tables, latin_name_to_tax_id
 
 logger = logging.getLogger(__name__)
 
-# returns dictionary, counts the number of times each codon is used
+
 def count_codons(dna_sequence):
+    """Count the number of times each codon appears in a DNA sequence.
+
+    Args:
+        dna_sequence (Bio.Seq.Seq): A read-only representation of
+            the DNA sequence.
+
+    Returns:
+        dict({str: int}): A dictionary with codons as keys and the
+            corresponding number of occurences as values.
+    """
     logger.info("===== COUNTING CODONS =====")
 
     codons_dict = CodonUsage.CodonsDict.copy()
@@ -16,8 +26,18 @@ def count_codons(dna_sequence):
     return codons_dict
 
 
-# returns dictionary, calculates the % usage of each AA's codons
 def calc_profile(codons_count):
+    """Calculate the frequency of usage of each synonymous codon from an
+    input dictionary of counts.
+
+    Args:
+        codons_count (dict({str: int})): A dictionary with codons as keys
+            and the corresponding number of occurences as values.
+
+    Returns:
+        dict({str: int}): A dictionary with codons as keys and the
+            corresponding frequency of occurences as values.
+    """
     logger.info("===== CALCULATING PROFILE =====")
     codons_freq = CodonUsage.CodonsDict.copy()
 
@@ -37,6 +57,21 @@ def calc_profile(codons_count):
 
 
 def calc_codon_relative_adaptiveness(codons_count):
+    """Calculate the relative adaptiveness of each synonymous codon from an
+    input dictionary of counts.
+
+    Note:
+        The claculation and some nomenclature is taken from Sharp and
+        Li (Nucleic Acids Res. 1987 Feb 11;15(3):1281-95).
+
+    Args:
+        codons_count (dict({str: int})): A dictionary with codons as keys
+            and the corresponding number of occurences as values.
+
+    Returns:
+        Bio.SeqUtils.CodonUsage.CodonAdaptationIndex: A CodonAdaptationIndex
+            instance configured to calculate CAI for a target gene.
+    """
     logger.info("===== CALCULATING RELATIVE ADAPTIVENESS =====")
     codons_rel_adapt = CodonUsage.CodonsDict.copy()
 
@@ -83,9 +118,19 @@ def _load_host_table(host):
     return calc_profile(table)
 
 
-# returns a calc_profile for a given host table
-def process_host_table(host, threshold=0.10):
+def process_host_table(host, threshold):
+    """Load the codon usage table for the desired host, filter codons with
+    a lower occurence than the threshold, and renormalize the frequency of
+    usage of each synonymous codon.
 
+    Args:
+        host (str): Latin name or NCBI taxonomy ID of the host organism.
+        threshold (float): Lowest fraction of codon usage to keep.
+
+    Returns:
+        dict({str: int}): A dictionary with codons as keys and the
+            corresponding frequency of occurences as values.
+    """
     table = _load_host_table(host)
 
     logger.info("HOST THRESHOLD SET TO: {0}".format(threshold))
@@ -111,9 +156,30 @@ def process_host_table(host, threshold=0.10):
     return table
 
 
-def host_codon_usage(host):
+def host_codon_usage(host, threshold=0.10):
+    """Load and process the per amino acid codon usage for the desired host in
+    accordance with the supplied threshold and configure a CodonAdaptationIndex
+    instance to calculate CAI for a target gene.
 
-    host_profile = _load_host_table(host)
+    Note:
+        The relative adaptiveness used in the CodonAdaptationIndex is based
+        on the filtered codon use frequencies, not the raw counts.
+
+    Args:
+        host (str): Latin name or NCBI taxonomy ID of the host organism.
+        threshold (float, optional): Lowest fraction of codon usage to keep.
+            Defaults to 0.10.
+
+    Returns:
+        dict({str : list[list, list]}): A dictionary with each amino acid
+            three-letter code as keys, and a list of two lists as values.
+            The first list is the synonymous codons that encode the amino
+            acid, the second is the frequency with which each synonymous
+            codon is used.
+        Bio.SeqUtils.CodonUsage.CodonAdaptationIndex: A `CodonAdaptationIndex`
+            instance configured to calculate CAI for a target gene.
+    """
+    host_profile = process_host_table(host, threshold)
     cra = calc_codon_relative_adaptiveness(host_profile)
 
     codon_use_by_aa = {}

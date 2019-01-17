@@ -36,6 +36,29 @@ def calc_profile(codons_count):
     return codons_freq
 
 
+def calc_codon_relative_adaptiveness(codons_count):
+    logger.info("===== CALCULATING RELATIVE ADAPTIVENESS =====")
+    codons_rel_adapt = CodonUsage.CodonsDict.copy()
+
+    # loop through all amino acids
+    for _, synonymous_codons in CodonUsage.SynonymousCodons.items():
+        # get the number of occurrences of the most frequently used codon
+        # `X_max` is the notation from Sharp & Li, Nucleic Acids Res. 1987
+        X_max = max([codons_count[codon] for codon in synonymous_codons])
+
+        # calculate the relative adaptiveness of each synonymous codon
+        if X_max == 0:
+            continue
+        codons_rel_adapt.update(
+            {codon: codons_count[codon] / X_max for codon in synonymous_codons}
+        )
+
+    codon_adaptation_index = CodonUsage.CodonAdaptationIndex()
+    codon_adaptation_index.set_cai_index(codons_rel_adapt)
+
+    return codon_adaptation_index
+
+
 def _load_host_table(host):
     logger.info("===== PROCESSING HOST TABLE: {0} =====".format(host))
     table = CodonUsage.CodonsDict.copy()
@@ -91,6 +114,7 @@ def process_host_table(host, threshold=0.10):
 def host_codon_usage(host):
 
     host_profile = _load_host_table(host)
+    cra = calc_codon_relative_adaptiveness(host_profile)
 
     codon_use_by_aa = {}
     for AA, synonymous_codons in CodonUsage.SynonymousCodons.items():
@@ -99,4 +123,4 @@ def host_codon_usage(host):
             [host_profile[codon] for codon in synonymous_codons],
         ]
 
-    return codon_use_by_aa
+    return codon_use_by_aa, cra

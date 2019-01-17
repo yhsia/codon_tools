@@ -457,7 +457,7 @@ logger.info("Total number of sequences: {0}".format(len(records)))
 [logger.detail(record) for record in records]
 
 # generate host profile
-codon_use_table = codon_use.host_codon_usage(args.host)
+codon_use_table, codoon_relative_adativeness = codon_use.host_codon_usage(args.host)
 
 # process through all supplied sequences
 for count, record in enumerate(records):
@@ -475,8 +475,8 @@ for count, record in enumerate(records):
     count_table = codon_use.count_codons(dna)
     input_profile = codon_use.calc_profile(count_table)
 
-    # run optimization
-    difference, current_cycle, relax = 1.0, 1, 1.0
+    # intialize bookkeeping variables
+    difference, current_cycle, relax, best_cai, best_dna_seq = 1.0, 1, 1.0, 0.0, Seq("")
 
     # keep running while there are cycles AND difference between current and host is less than the % relax allowed
     while ((current_cycle <= args.cycles) or (args.cycles == 0)) and (
@@ -507,7 +507,6 @@ for count, record in enumerate(records):
         input_profile = codon_use.calc_profile(count_table)
 
         # compare input and host profiles
-        # this should probably use the CAI metric
         """
         # determine how much to relax harmonization
         relax = 1 + (args.max_relax * ((current_cycle - 1) / args.cycles))
@@ -518,6 +517,12 @@ for count, record in enumerate(records):
         )
         """
 
+        # if the codon adaptation index is better than what we've
+        # seen so far, store this sequence
+        cai = codoon_relative_adativeness.cai_for_gene(str(dna))
+        if cai > best_cai:
+            best_dna_seq = dna
+
         # tick cycle
         current_cycle += 1
 
@@ -527,7 +532,7 @@ for count, record in enumerate(records):
 
     # check GC content
     logger.info("===== GC CONTENT =====")
-    gc_percent = round(GC(dna) / 100, 3)
+    gc_percent = round(GC(best_dna_seq) / 100, 3)
     if gc_percent < 0.3 or gc_percent > 0.65:
         logger.warning("Overall GC content is {0}!".format(gc_percent))
 
@@ -538,4 +543,4 @@ for count, record in enumerate(records):
     # display final codon-use difference between host and current sequence (0.00 is ideal)
     logger.output("({0})".format(round(difference, 2)))
     logger.output("===== DUMPING SEQUENCE =====")
-    logger.output(str(dna))
+    logger.output(str(best_dna_seq))

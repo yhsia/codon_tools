@@ -20,8 +20,9 @@ def count_codons(dna_sequence):
     logger.info("===== COUNTING CODONS =====")
 
     codons_dict = CodonUsage.CodonsDict.copy()
-    for codon in dna_sequence.codons():
-        codons_dict[codon] += 1
+    for codon_start in range(0, len(dna_sequence), 3):
+        codon_idx = slice(codon_start, codon_start + 3)
+        codons_dict[dna_sequence[codon_idx]] += 1
 
     return codons_dict
 

@@ -39,23 +39,3 @@ def back_translate(self):
 
 
 Seq.back_translate = back_translate
-
-
-def grouper(iterable, n, fillvalue=None):
-    "Collect data into fixed-length chunks or blocks"
-    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
-    from itertools import zip_longest
-
-    args = [iter(iterable)] * n
-    return zip_longest(*args, fillvalue=fillvalue)
-
-
-def codons(self):
-    base = Bio.Alphabet._get_base_alphabet(self.alphabet)
-    if isinstance(base, Bio.Alphabet.ProteinAlphabet):
-        raise ValueError("Protein sequences cannot be split into codons!")
-    for codon in grouper(self, 3):
-        yield "".join(codon)
-
-
-Seq.codons = codons

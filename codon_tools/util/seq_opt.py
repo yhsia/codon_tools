@@ -8,7 +8,7 @@ from Bio.Data import CodonTable
 from Bio.Restriction import Analysis
 from Bio.SeqUtils import CodonUsage, GC, seq3
 
-from . import Seq
+from . import Seq, codon_use
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ def resample_codons(dna_sequence, codon_use_table):
     return Seq(resampled_dna, IUPAC.unambiguous_dna)
 
 
-def compare_profiles(codons_count, host, relax):
+def compare_profiles(codons_count, host_profile, relax):
     """Compute the deviation from the expected codon usage based on a host
     codon usage profile.
 
@@ -88,8 +88,8 @@ def compare_profiles(codons_count, host, relax):
     Args:
         codons_count (dict({str : int})): A dictionary with each codon as
             keys and the number of times it appears in a gene as values.
-        host (dict({str : foat})): A dictionary with each codon as keys and the
-            frequency of its use in the host organism as values.
+        host_profile (dict({str : foat})): A dictionary with each codon as keys
+            and the frequency of its use in the host organism as values.
         relax (float): The maximum deviation from the host profile to tolerate.
 
     Returns:
@@ -112,8 +112,8 @@ def compare_profiles(codons_count, host, relax):
         # calculate ideal usage of codon in host
         tot_ideal = 0
         for codon in synonymous_codons:
-            ideal_usage_abs = int(round(host[codon] * tot_usage, 0))
-            ideal_usage = int(round(host[codon] * relax * tot_usage, 0))
+            ideal_usage_abs = int(round(host_profile[codon] * tot_usage, 0))
+            ideal_usage = int(round(host_profile[codon] * relax * tot_usage, 0))
             logger.detail("{0}: {1}".format(codon, ideal_usage))
             tot_ideal += ideal_usage
             temp_table[codon] = {
@@ -121,7 +121,7 @@ def compare_profiles(codons_count, host, relax):
                 "input_perc": codons_count[codon],
                 "ideal_usage_abs": ideal_usage_abs,
                 "ideal_usage": ideal_usage,
-                "host_perc": host[codon],
+                "host_perc": host_profile[codon],
             }
 
         # account for rounding issues and relaxation of the host profile
@@ -239,6 +239,40 @@ def harmonize_codon_use_with_host(dna_sequence, mutation_profile):
         # mutation_table now has difference = 0 for all codons
 
     return mutable_seq.toseq()
+
+
+def resample_codons_and_enforce_host_profile(
+    dna_sequence, codon_use_table, host_profile, relax
+):
+    """Generate a new DNA sequence by swapping synonymous codons.
+    Codons are selected in accordance with their frequency of occurrence in
+    the host organism and adjust the codon usage in the DNA sequence to
+    match the host profile.
+
+    Args:
+        dna_sequence (Bio.Seq.Seq): A read-only representation of
+            the DNA sequence.
+        codon_use_table (dict({str : list[list, list]})): A dictionary with
+            each amino acid three-letter code as keys, and a list of two
+            lists as values. The first list is the synonymous codons that
+            encode the amino acid, the second is the frequency with which
+            each synonymous codon is used.
+        host_profile (dict({str : foat})): A dictionary with each codon as keys
+            and the frequency of its use in the host organism as values.
+        relax (float): The maximum deviation from the host profile to tolerate.
+
+    Returns:
+        Bio.Seq.Seq: A read-only representation of the new DNA sequence.
+    """
+    logger.info("Relax coeff: {0}".format(relax))
+    dna = resample_codons(dna_sequence, codon_use_table)
+
+    # measure the deviation from the host profile and adjust accordingly
+    mutation_table, difference = compare_profiles(
+        codon_use.count_codons(dna_sequence), host_profile, relax
+    )
+
+    return harmonize_codon_use_with_host(dna, mutation_table)
 
 
 def gc_scan(dna_sequence, gc, codon_use_table):

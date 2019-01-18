@@ -5,7 +5,7 @@ from Bio import Restriction
 _restriction_enzymes = ["NdeI", "XhoI", "HpaI", "PstI", "EcoRV", "NcoI", "BamHI"]
 
 
-def get_restriction_enzymes(restriction_enzymes=_restriction_enzymes):
+def RestrictionEnzymes(restriction_enzymes=_restriction_enzymes):
     """Create a RestrictionBatch instance to search for sites for a supplied
     list of restriction enzymes.
 

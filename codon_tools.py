@@ -2,10 +2,10 @@
 import argparse
 import random
 import sys
-import textwrap
 
 from Bio import SeqIO
 from Bio.Alphabet import IUPAC
+from Bio.SeqRecord import SeqRecord
 from Bio.SeqUtils import GC
 
 from codon_tools.util import codon_use, logging, log_levels, seq_opt
@@ -59,6 +59,14 @@ def get_args(argv=None):
         default="0.1",
         help="maximum percent deviation from host profile",
     )
+    parser.add_argument(
+        "--restriction_enzymes",
+        nargs="*",
+        type=str,
+        default="NdeI XhoI HpaI PstI EcoRV NcoI BamHI".split(),
+        help="list of restriction enzyme sites to remove "
+        + "(e.g. --restriction_enzymes NdeI XhoI HpaI). ",
+    )
 
     args = parser.parse_args()
 
@@ -107,7 +115,7 @@ def main(argv):
         logger.detail(str(dna))
 
         # intialize bookkeeping variables
-        difference, current_cycle, relax, best_cai, best_dna_seq = 1.0, 1, 1.0, 0.0, ""
+        difference, current_cycle, relax, best_cai, best_dna = 1.0, 1, 1.0, 0.0, ""
 
         # keep running while there are cycles AND difference between current and host is less than the % relax allowed
         while ((current_cycle <= args.cycles) or (args.cycles == 0)) and (
@@ -125,9 +133,10 @@ def main(argv):
             for gc_content in GC_content:
                 # check various GC content requirements
                 dna = seq_opt.gc_scan(dna, gc_content, codon_use_table)
-            dna = seq_opt.remove_restriction_sites(
-                dna, RestrictionEnzymes(), codon_use_table
-            )
+
+            rest_enz = RestrictionEnzymes(args.restriction_enzymes)
+            if len(rest_enz):
+                dna = seq_opt.remove_restriction_sites(dna, rest_enz, codon_use_table)
             dna = seq_opt.remove_start_sites(dna, RibosomeBindingSites, codon_use_table)
             dna = seq_opt.remove_repeating_sequences(dna, 9, codon_use_table)
             dna = seq_opt.remove_local_homopolymers(
@@ -154,7 +163,9 @@ def main(argv):
             # seen so far, store this sequence
             cai = codoon_relative_adativeness.cai_for_gene(str(dna))
             if cai > best_cai:
-                best_dna_seq = dna
+                best_dna = SeqRecord(
+                    dna, id=record.id, name=record.name, description=record.description
+                )
 
             # tick cycle
             current_cycle += 1
@@ -165,13 +176,13 @@ def main(argv):
 
         # check GC content
         logger.info("===== GC CONTENT =====")
-        gc_percent = round(GC(best_dna_seq) / 100, 3)
+        gc_percent = round(GC(best_dna.seq) / 100, 3)
         if gc_percent < 0.3 or gc_percent > 0.65:
             logger.warning("Overall GC content is {0}!".format(gc_percent))
 
         # measure the final deviation from the host profile
         _, difference = seq_opt.compare_profiles(
-            codon_use.count_codons(best_dna_seq), host_profile, relax
+            codon_use.count_codons(best_dna.seq), host_profile, relax
         )
 
         logger.output(
@@ -180,9 +191,7 @@ def main(argv):
         )
 
         logger.output("===== NAME AND SEQUENCE =====")
-        print(
-            ">{0}\n{1}".format(record.id, "\n".join(textwrap.wrap(str(best_dna_seq))))
-        )
+        print(best_dna.format("fasta"))
 
 
 if __name__ == "__main__":

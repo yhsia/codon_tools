@@ -2,10 +2,7 @@ from collections import namedtuple
 from Bio import Restriction
 
 
-_restriction_enzymes = ["NdeI", "XhoI", "HpaI", "PstI", "EcoRV", "NcoI", "BamHI"]
-
-
-def RestrictionEnzymes(restriction_enzymes=_restriction_enzymes):
+def RestrictionEnzymes(restriction_enzymes):
     """Create a RestrictionBatch instance to search for sites for a supplied
     list of restriction enzymes.
 
@@ -19,11 +16,7 @@ def RestrictionEnzymes(restriction_enzymes=_restriction_enzymes):
             configured with the input restriction enzymes.
     """
     return Restriction.RestrictionBatch(
-        [
-            getattr(Restriction, enz)
-            for enz in restriction_enzymes
-            if hasattr(Restriction, enz)
-        ]
+        [Restriction.AllEnzymes.get(enz) for enz in restriction_enzymes]
     )
 
 

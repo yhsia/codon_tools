@@ -39,5 +39,7 @@ The process is repeated from step 3 for a specified number of cycles (defaults t
 
 ## To do
 - [ ] remove RNA structure from sequence
+    * [CONTRAfold](http://contra.stanford.edu/contrafold/)
+    * [nupack](http://nupack.org)
 - [ ] remove predicted splice sites
 - [x] store "best" sequence by codon adaptation index relative to host and return that to the user

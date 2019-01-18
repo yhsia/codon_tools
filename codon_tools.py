@@ -56,7 +56,7 @@ def get_args(argv=None):
         "--max_relax",
         type=float,
         default="0.1",
-        help="maximum % deviation from host profile",
+        help="maximum percent deviation from host profile",
     )
 
     args = parser.parse_args()

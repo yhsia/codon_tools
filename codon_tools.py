@@ -88,13 +88,7 @@ def main(argv):
     logger = logging.getLogger(__name__)
 
     random.seed()
-
     logger.info("===== SCRIPT START =====")
-    # read the input sequence file and parse lines
-    records = list(SeqIO.parse(args.input, "fasta", IUPAC.protein))
-
-    logger.info("Total number of sequences: {0}".format(len(records)))
-    [logger.detail(record) for record in records]
 
     # generate host profile
     codon_use_table, host_profile, codoon_relative_adativeness = codon_use.host_codon_usage(
@@ -102,9 +96,9 @@ def main(argv):
     )
 
     # process through all supplied sequences
-    for count, record in enumerate(records):
+    for seq_no, record in enumerate(SeqIO.parse(args.input, "fasta", IUPAC.protein)):
         logger.info(
-            "===== PROCESSING SEQUENCE {0} ===== {1}".format(count + 1, record.id)
+            "===== PROCESSING SEQUENCE {0} ===== {1}".format(seq_no + 1, record.id)
         )
 
         # check input seq style

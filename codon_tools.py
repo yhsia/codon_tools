@@ -142,16 +142,13 @@ def main(argv):
                 homopolymer_threshold=args.local_homopolymer_threshold,
             )
 
-            # count codon usage in the sequence
-            count_table = codon_use.count_codons(dna)
-
             # adjust harmonization relax
             relax = 1 + (args.max_relax * ((current_cycle - 1) / args.cycles))
             logger.info("Relax coeff: {0}".format(relax))
 
             # measure the deviation from the host profile and adjust accordingly
             mutation_table, difference = seq_opt.compare_profiles(
-                count_table, host_profile, relax
+                codon_use.count_codons(dna), host_profile, relax
             )
             dna = seq_opt.harmonize_codon_use_with_host(dna, mutation_table)
 

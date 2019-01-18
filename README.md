@@ -40,4 +40,4 @@ The process is repeated from step 3 for a specified number of cycles (defaults t
 ## To do
 - [ ] remove RNA structure from sequence
 - [ ] remove predicted splice sites
-- [ ] store "best" sequence by profile similarity to host and return that to the user
+- [x] store "best" sequence by codon adaptation index relative to host and return that to the user

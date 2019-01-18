@@ -135,8 +135,6 @@ def main(argv):
                 # check various GC content requirements
                 dna = seq_opt.gc_scan(dna, gc_content, codon_use_table)
 
-            if len(rest_enz):
-                dna = seq_opt.remove_restriction_sites(dna, rest_enz, codon_use_table)
             dna = seq_opt.remove_start_sites(dna, RibosomeBindingSites, codon_use_table)
             dna = seq_opt.remove_repeating_sequences(dna, 9, codon_use_table)
             dna = seq_opt.remove_local_homopolymers(
@@ -145,6 +143,8 @@ def main(argv):
                 n_codons=2,
                 homopolymer_threshold=args.local_homopolymer_threshold,
             )
+            if len(rest_enz):
+                dna = seq_opt.remove_restriction_sites(dna, rest_enz, codon_use_table)
 
             # if the codon adaptation index is better than what we've
             # seen so far, store this sequence

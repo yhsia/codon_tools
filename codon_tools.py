@@ -126,6 +126,16 @@ def main(argv):
 
             dna = seq_opt.resample_codons(dna, codon_use_table)
 
+            # relax harmonization requirement
+            relax = 1 + (args.max_relax * ((current_cycle - 1) / args.cycles))
+            logger.info("Relax coeff: {0}".format(relax))
+
+            # measure the deviation from the host profile and adjust accordingly
+            mutation_table, difference = seq_opt.compare_profiles(
+                codon_use.count_codons(dna), host_profile, relax
+            )
+            dna = seq_opt.harmonize_codon_use_with_host(dna, mutation_table)
+
             # identify and remove undesirable features
             for gc_content in GC_content:
                 # check various GC content requirements
@@ -141,16 +151,6 @@ def main(argv):
                 n_codons=2,
                 homopolymer_threshold=args.local_homopolymer_threshold,
             )
-
-            # adjust harmonization relax
-            relax = 1 + (args.max_relax * ((current_cycle - 1) / args.cycles))
-            logger.info("Relax coeff: {0}".format(relax))
-
-            # measure the deviation from the host profile and adjust accordingly
-            mutation_table, difference = seq_opt.compare_profiles(
-                codon_use.count_codons(dna), host_profile, relax
-            )
-            dna = seq_opt.harmonize_codon_use_with_host(dna, mutation_table)
 
             # if the codon adaptation index is better than what we've
             # seen so far, store this sequence

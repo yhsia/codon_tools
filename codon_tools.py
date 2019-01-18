@@ -16,55 +16,55 @@ from codon_tools.data import GC_content, RibosomeBindingSites, get_restriction_e
 
 
 # options
-parser = argparse.ArgumentParser(
-    description="Optimize your AA or DNA sequence to harmonize with a host's condon usage.",
-    epilog="2017-12-04, v0.47 (contact yhsia@uw.edu if stuff does not work)",
-)
-parser.add_argument("--input", type=str, required=True, help="input file with sequence")
-parser.add_argument(
-    "--host",
-    type=str,
-    default="413997",
-    help='host table code: http://www.kazusa.or.jp/codon/, default is "Escherichia coli B"',
-)
-parser.add_argument(
-    "--host_threshold",
-    type=float,
-    default="0.10",
-    help="lowest codon fraction per AA in the host that is allowed",
-)
-parser.add_argument(
-    "--verbose",
-    type=int,
-    default=0,
-    choices=[0, 1, 2, 3],
-    help="verbose output level (0=only result, 1=standard output, 2=extra output 3=debugging)",
-)
-parser.add_argument(
-    "--local_homopolymer_threshold",
-    type=int,
-    default="4",
-    help="number of consecutive NT repeats allowed",
-)
-parser.add_argument(
-    "--cycles",
-    type=int,
-    default=1000,
-    help="max number of cycles to run optimization, 0=unlimited",
-)
-parser.add_argument(
-    "--max_relax",
-    type=float,
-    default="0.1",
-    help="maximum % deviation from host profile",
-)
+def get_args(argv=None):
+    parser = argparse.ArgumentParser(
+        description="Reverse translate your amino acid sequence harmoniously with a host's condon usage.",
+        epilog="v0.9 (contact yhsia@uw.edu or bweitzner@lyellbio.com if you encounter errors)",
+    )
+    parser.add_argument(
+        "--input", type=str, required=True, help="input file with sequence"
+    )
+    parser.add_argument(
+        "--host",
+        type=str,
+        default="413997",
+        help='host table code: http://www.kazusa.or.jp/codon/, default is "Escherichia coli B"',
+    )
+    parser.add_argument(
+        "--host_threshold",
+        type=float,
+        default="0.10",
+        help="lowest codon fraction per AA in the host that is allowed",
+    )
+    parser.add_argument(
+        "--verbose",
+        type=int,
+        default=0,
+        choices=[0, 1, 2, 3],
+        help="verbose output level (0=only result, 1=standard output, 2=extra output 3=debugging)",
+    )
+    parser.add_argument(
+        "--local_homopolymer_threshold",
+        type=int,
+        default="4",
+        help="number of consecutive NT repeats allowed",
+    )
+    parser.add_argument(
+        "--cycles",
+        type=int,
+        default=1000,
+        help="max number of cycles to run optimization, 0=unlimited",
+    )
+    parser.add_argument(
+        "--max_relax",
+        type=float,
+        default="0.1",
+        help="maximum % deviation from host profile",
+    )
 
-args = parser.parse_args()
+    args = parser.parse_args()
 
-
-logging.basicConfig(level=log_levels[args.verbose])
-logger = logging.getLogger(__name__)
-random.seed()
+    return args
 
 
 def compare_profiles(codons_count, host, relax):
@@ -296,29 +296,41 @@ def resample_codons(dna_sequence, codon_use_table):
     return Seq(resampled_dna, IUPAC.unambiguous_dna)
 
 
-def gc_scan(dna_sequence, window_size, low, high):
+def gc_scan(dna_sequence, gc, codon_use_table):
     """Scan across a sequence and replace codons to acheive a desired GC
     content within the window.
+    Note:
+        The following fields in the `GCParams` type are used in this
+        function:
+
+        window_size (int): Size of sliding window (in nucelotides) to
+            examine for GC content. Window sizes can also be expressed as
+            factors of the length of `dna_sequence` by passing a string
+            that begins with "x" (e.g. "x0.5").
+        low (float): Minimum GC content in window.
+        high (float): Maximum GC content in window.
 
     Args:
         dna_sequence (Bio.Seq.Seq): A read-only representation of
             the DNA sequence.
-        window_size (int): Size of sliding window (in nucelotides) to
-            examine for GC content. Window sizes can also be expressed
-            as factors of the length of `dna_sequence` by passing a string
-            that begins with "x" (e.g. "x0.5").
-        low (float): Minimum GC content in window.
-        high (float): Maximum GC content in window.
+        gc (GCParams): A `namedtuple` with fields for name, window_size,
+            minimum and maximum GC content.
+        codon_use_table (dict({str : list[list, list]})): A dictionary with
+            each amino acid three-letter code as keys, and a list of two
+            lists as values. The first list is the synonymous codons that
+            encode the amino acid, the second is the frequency with which
+            each synonymouscodon is used.
 
     Returns:
         Bio.Seq.Seq: A read-only representation of the new DNA sequence.
     """
     logger.info(
         "===== GC CONTENT SCAN IN WINDOW: {0} bps, threshold: {1} < x < {2}=====".format(
-            window_size, low, high
+            gc.window_size, gc.low, gc.high
         )
     )
 
+    window_size = gc.window_size  # tuples are immutable
     # some windows may be expressed as function of the sequence length
     if isinstance(window_size, str) and window_size.startswith("x"):
         window_size = int(float(window_size[1:]) * len(dna_sequence))
@@ -341,15 +353,17 @@ def gc_scan(dna_sequence, window_size, low, high):
         gc_percent = GC(mutable_seq[window]) / 100
         count = 0  # counter to prevent infinite loop
         # check gc_percent of current segment
-        while (gc_percent < low or gc_percent > high) and count < codon_window * 2:
+        while (
+            gc_percent < gc.low or gc_percent > gc.high
+        ) and count < codon_window * 2:
             position = random.randrange(0, len(mutable_seq[window]), 3)
             codon_idx = slice((i * 3) + position, ((i + 1) * 3) + position)
 
             init_codon = mutable_seq[codon_idx]
             new_codon = mutate_codon(init_codon, codon_use_table)
 
-            if (GC(new_codon) < GC(init_codon) and gc_percent > high) or (
-                GC(new_codon) > GC(init_codon) and gc_percent < low
+            if (GC(new_codon) < GC(init_codon) and gc_percent > gc.high) or (
+                GC(new_codon) > GC(init_codon) and gc_percent < gc.low
             ):
                 mutable_seq[codon_idx] = new_codon
                 logger.debug("Mutating position: {0}".format(position))
@@ -360,7 +374,7 @@ def gc_scan(dna_sequence, window_size, low, high):
     return mutable_seq.toseq()
 
 
-def remove_restriction_sites(dna_sequence, restrict_sites):
+def remove_restriction_sites(dna_sequence, restrict_sites, codon_use_table):
     """Identify and remove seuences recognized by a set of restriction
     enzymes.
 
@@ -369,6 +383,11 @@ def remove_restriction_sites(dna_sequence, restrict_sites):
             the DNA sequence.
         restrict_sites (Bio.Restriction.RestrictionBatch): RestrictionBatch
             instance configured with the input restriction enzymes.
+        codon_use_table (dict({str : list[list, list]})): A dictionary with
+            each amino acid three-letter code as keys, and a list of two
+            lists as values. The first list is the synonymous codons that
+            encode the amino acid, the second is the frequency with which
+            each synonymouscodon is used.
 
     Returns:
         Bio.Seq.Seq: A read-only representation of the new DNA sequence.
@@ -403,7 +422,9 @@ def remove_restriction_sites(dna_sequence, restrict_sites):
     return mutable_seq.toseq()
 
 
-def remove_start_sites(dna_sequence, ribosome_binding_sites, table_name="Standard"):
+def remove_start_sites(
+    dna_sequence, ribosome_binding_sites, codon_use_table, table_name="Standard"
+):
     """Identify and remove alternate start sites using a supplied set of
     ribosome binding sites and a codon table name.
 
@@ -413,6 +434,11 @@ def remove_start_sites(dna_sequence, ribosome_binding_sites, table_name="Standar
         ribosome_binding_sites (dict({str : str})): A dictionary with named
             ribosome binding sites as keys and the corresponding sequences
             as values.
+        codon_use_table (dict({str : list[list, list]})): A dictionary with
+            each amino acid three-letter code as keys, and a list of two
+            lists as values. The first list is the synonymous codons that
+            encode the amino acid, the second is the frequency with which
+            each synonymouscodon is used.
         table_name (str, optional): Name of a registered NCBI table. See
             `Bio.Data.CodonTable.unambiguous_dna_by_name.keys()` for
             options. Defaults to "Standard".
@@ -485,7 +511,7 @@ def remove_start_sites(dna_sequence, ribosome_binding_sites, table_name="Standar
     return mutable_seq.toseq()
 
 
-def remove_repeating_sequences(dna_sequence, window_size):
+def remove_repeating_sequences(dna_sequence, window_size, codon_use_table):
     """Idenify and remove repeating sequences of codons or groups of
     codons within a DNA sequence.
 
@@ -495,6 +521,11 @@ def remove_repeating_sequences(dna_sequence, window_size):
         window_size (int): Size the window (in nucleotides) to examine.
             Window sizes are adjusted down to the nearest multiple of 3 so
             windows only contain complete codons.
+        codon_use_table (dict({str : list[list, list]})): A dictionary with
+            each amino acid three-letter code as keys, and a list of two
+            lists as values. The first list is the synonymous codons that
+            encode the amino acid, the second is the frequency with which
+            each synonymouscodon is used.
 
     Returns:
         Bio.Seq.Seq: A read-only representation of the new DNA sequence.
@@ -560,15 +591,24 @@ def remove_repeating_sequences(dna_sequence, window_size):
     return mutable_seq.toseq()
 
 
-def remove_local_homopolymers(dna_sequence, n_codons=2):
+def remove_local_homopolymers(
+    dna_sequence, codon_use_table, n_codons=2, homopolymer_threshold=4
+):
     """Identify and remove consecutive streches of the same nucleotides
     using a sliding window of a fixed number of codons.
 
     Args:
         dna_sequence (Bio.Seq.Seq): A read-only representation of
             the DNA sequence.
+        codon_use_table (dict({str : list[list, list]})): A dictionary with
+            each amino acid three-letter code as keys, and a list of two
+            lists as values. The first list is the synonymous codons that
+            encode the amino acid, the second is the frequency with which
+            each synonymouscodon is used.
         n_codons (int, optional): Size of window (in codons) to examine.
             Defaults to 2.
+        homopolymer_threshold (int): number of consecutive nucleotide
+            repeats allowed. Defaults to 4.
 
     Returns:
         Bio.Seq.Seq: A read-only representation of the new DNA sequence.
@@ -591,7 +631,7 @@ def remove_local_homopolymers(dna_sequence, n_codons=2):
             nt_counts = {letter: seq.count(letter) for letter in set(seq)}
             letter = max(nt_counts, key=lambda letter: nt_counts[letter])
 
-            if nt_counts[letter] <= args.local_homopolymer_threshold:
+            if nt_counts[letter] <= homopolymer_threshold:
                 keep_looping = False
                 continue
 
@@ -608,97 +648,127 @@ def remove_local_homopolymers(dna_sequence, n_codons=2):
     return mutable_seq.toseq()
 
 
-##########################################################
-#
-# 	ACTUAL SCRIPT STARTS HERE
-#
-##########################################################
+def main(argv):
+    """Read in a fasta-formatted file containing amino acid sequences and
+    reverse translate each of them in accordance with a specified host's
+    codon usage frequency. The DNA sequence is then processed to remove
+    unwanted features.
 
-logger.info("===== SCRIPT START =====")
+    Args:
+        argv (list[str]): Command line arguments passed into the function.
+    """
+    args = get_args(argv)
+    global logger
+    logging.basicConfig(level=log_levels[args.verbose])
+    logger = logging.getLogger(__name__)
 
-# read the input sequence file and parse lines
-records = list(SeqIO.parse(args.input, "fasta", IUPAC.protein))
+    random.seed()
 
-logger.info("Total number of sequences: {0}".format(len(records)))
-[logger.detail(record) for record in records]
+    logger.info("===== SCRIPT START =====")
+    # read the input sequence file and parse lines
+    records = list(SeqIO.parse(args.input, "fasta", IUPAC.protein))
 
-# generate host profile
-codon_use_table, host_profile, codoon_relative_adativeness = codon_use.host_codon_usage(
-    args.host, args.host_threshold
-)
+    logger.info("Total number of sequences: {0}".format(len(records)))
+    [logger.detail(record) for record in records]
 
-# process through all supplied sequences
-for count, record in enumerate(records):
-    logger.info("===== PROCESSING SEQUENCE {0} ===== {1}".format(count + 1, record.id))
+    # generate host profile
+    codon_use_table, host_profile, codoon_relative_adativeness = codon_use.host_codon_usage(
+        args.host, args.host_threshold
+    )
 
-    # check input seq style
-    logger.info("INPUT IS AA SEQUENCE")
-    dna = record.seq.back_translate()
-
-    logger.detail("===== DUMPING SEQUENCE =====")
-    logger.detail(str(dna))
-
-    # intialize bookkeeping variables
-    difference, current_cycle, relax, best_cai, best_dna_seq = 1.0, 1, 1.0, 0.0, Seq("")
-
-    # keep running while there are cycles AND difference between current and host is less than the % relax allowed
-    while ((current_cycle <= args.cycles) or (args.cycles == 0)) and (
-        difference >= (relax - 1)
-    ):
+    # process through all supplied sequences
+    for count, record in enumerate(records):
         logger.info(
-            "~~~~~~~~~~ Current cycle: {0}/{1} ~~~~~~~~~~".format(
-                current_cycle, args.cycles
-            )
+            "===== PROCESSING SEQUENCE {0} ===== {1}".format(count + 1, record.id)
         )
 
-        dna = resample_codons(dna, codon_use_table)
+        # check input seq style
+        logger.info("INPUT IS AA SEQUENCE")
+        dna = record.seq.back_translate()
 
-        # identify and remove undesirable features
-        for _, gc_content in GC_content.items():
-            # check various GC content requirements
-            dna = gc_scan(dna, **gc_content)
-        dna = remove_restriction_sites(dna, get_restriction_enzymes())
-        dna = remove_start_sites(dna, RibosomeBindingSites, "Standard")
-        dna = remove_repeating_sequences(dna, 9)
-        dna = remove_local_homopolymers(dna)
+        logger.detail("===== DUMPING SEQUENCE =====")
+        logger.detail(str(dna))
 
-        # count codon usage in the sequence
-        count_table = codon_use.count_codons(dna)
+        # intialize bookkeeping variables
+        difference, current_cycle, relax, best_cai, best_dna_seq = (
+            1.0,
+            1,
+            1.0,
+            0.0,
+            Seq(""),
+        )
 
-        # adjust harmonization relax
-        relax = 1 + (args.max_relax * ((current_cycle - 1) / args.cycles))
-        logger.info("Relax coeff: {0}".format(relax))
+        # keep running while there are cycles AND difference between current and host is less than the % relax allowed
+        while ((current_cycle <= args.cycles) or (args.cycles == 0)) and (
+            difference >= (relax - 1)
+        ):
+            logger.info(
+                "~~~~~~~~~~ Current cycle: {0}/{1} ~~~~~~~~~~".format(
+                    current_cycle, args.cycles
+                )
+            )
 
-        # measure the deviation from the host profile and adjust accordingly
-        mutation_table, difference = compare_profiles(count_table, host_profile, relax)
-        dna = harmonize_codon_use_with_host(dna, mutation_table)
+            dna = resample_codons(dna, codon_use_table)
 
-        # if the codon adaptation index is better than what we've
-        # seen so far, store this sequence
-        cai = codoon_relative_adativeness.cai_for_gene(str(dna))
-        if cai > best_cai:
-            best_dna_seq = dna
+            # identify and remove undesirable features
+            for gc_content in GC_content:
+                # check various GC content requirements
+                dna = gc_scan(dna, gc_content, codon_use_table)
+            dna = remove_restriction_sites(
+                dna, get_restriction_enzymes(), codon_use_table
+            )
+            dna = remove_start_sites(dna, RibosomeBindingSites, "Standard")
+            dna = remove_repeating_sequences(dna, 9, codon_use_table)
+            dna = remove_local_homopolymers(
+                dna,
+                codon_use_table,
+                n_codons=2,
+                homopolymer_threshold=args.local_homopolymer_threshold,
+            )
 
-        # tick cycle
-        current_cycle += 1
+            # count codon usage in the sequence
+            count_table = codon_use.count_codons(dna)
 
-    # hit the max number of cycles?
-    if current_cycle > args.cycles:
-        logger.info("You hit the max number of cycles: {0}".format(args.cycles))
+            # adjust harmonization relax
+            relax = 1 + (args.max_relax * ((current_cycle - 1) / args.cycles))
+            logger.info("Relax coeff: {0}".format(relax))
 
-    # check GC content
-    logger.info("===== GC CONTENT =====")
-    gc_percent = round(GC(best_dna_seq) / 100, 3)
-    if gc_percent < 0.3 or gc_percent > 0.65:
-        logger.warning("Overall GC content is {0}!".format(gc_percent))
+            # measure the deviation from the host profile and adjust accordingly
+            mutation_table, difference = compare_profiles(
+                count_table, host_profile, relax
+            )
+            dna = harmonize_codon_use_with_host(dna, mutation_table)
 
-    # display result name and sequence
-    logger.output("===== SEQUENCE NAME =====")
-    logger.output("{0}".format(record.id))
+            # if the codon adaptation index is better than what we've
+            # seen so far, store this sequence
+            cai = codoon_relative_adativeness.cai_for_gene(str(dna))
+            if cai > best_cai:
+                best_dna_seq = dna
 
-    logger.output(
-        "Final codon-use difference between host and current sequence "
-        + "(0.00 is ideal): {0}".format(round(difference, 2))
-    )
-    logger.output("===== DUMPING SEQUENCE =====")
-    logger.output(str(best_dna_seq))
+            # tick cycle
+            current_cycle += 1
+
+        # hit the max number of cycles?
+        if current_cycle > args.cycles:
+            logger.info("You hit the max number of cycles: {0}".format(args.cycles))
+
+        # check GC content
+        logger.info("===== GC CONTENT =====")
+        gc_percent = round(GC(best_dna_seq) / 100, 3)
+        if gc_percent < 0.3 or gc_percent > 0.65:
+            logger.warning("Overall GC content is {0}!".format(gc_percent))
+
+        # display result name and sequence
+        logger.output("===== SEQUENCE NAME =====")
+        logger.output("{0}".format(record.id))
+
+        logger.output(
+            "Final codon-use difference between host and current sequence "
+            + "(0.00 is ideal): {0}".format(round(difference, 2))
+        )
+        logger.output("===== DUMPING SEQUENCE =====")
+        logger.output(str(best_dna_seq))
+
+
+if __name__ == "__main__":
+    main(sys.argv)

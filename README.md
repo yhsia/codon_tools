@@ -25,7 +25,7 @@ ACDEFGHIKLMNPQRSTVWY
 
 ## Features
 1. Reverse translates input amino acid sequence to DNA.
-2. Calculates the host's per-AA codon usage profile -- codons used less than a specified threshold (defaults to 10%) are dropped.
+2. Calculates the host's per-AA codon usage profile – codons used less than a specified threshold (defaults to 10%) are dropped.
 3. Compares the reverse-translated DNA sequence to the host profile, determines which codons are overused/underused.
 4. Stochastically mutates codons according to host profile.
 5. Processes DNA to remove unwanted features:

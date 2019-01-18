@@ -1,3 +1,4 @@
+from collections import namedtuple
 from Bio import Restriction
 
 
@@ -26,12 +27,13 @@ def get_restriction_enzymes(restriction_enzymes=_restriction_enzymes):
     )
 
 
-GC_content = {
-    "IDT": {"window_size": 20, "low": 0.15, "high": 0.90},
-    "twist": {"window_size": 50, "low": 0.15, "high": 0.80},
-    "IDT_long": {"window_size": 100, "low": 0.28, "high": 0.76},
-    "twist_long": {"window_size": "x3", "low": 0.3, "high": 0.65},
-}
+GCParams = namedtuple("GCParams", "name window_size low high")
+GC_content = [
+    GCParams("IDT", 20, 0.15, 0.90),
+    GCParams("twist", 50, 0.15, 0.80),
+    GCParams("IDT_long", 100, 0.28, 0.76),
+    GCParams("twist_long", "x3", 0.3, 0.65),
+]
 
 RibosomeBindingSites = {
     "rbs_0": "GGGGG",

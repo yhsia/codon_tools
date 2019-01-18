@@ -177,6 +177,8 @@ def host_codon_usage(host, threshold=0.10):
             The first list is the synonymous codons that encode the amino
             acid, the second is the frequency with which each synonymous
             codon is used.
+        dict({str: int}): A dictionary with codons as keys and the
+            corresponding frequency of occurences as values.
         Bio.SeqUtils.CodonUsage.CodonAdaptationIndex: A `CodonAdaptationIndex`
             instance configured to calculate CAI for a target gene.
     """
@@ -190,4 +192,4 @@ def host_codon_usage(host, threshold=0.10):
             [host_profile[codon] for codon in synonymous_codons],
         ]
 
-    return codon_use_by_aa, cra
+    return codon_use_by_aa, host_profile, cra

@@ -67,8 +67,32 @@ logger = logging.getLogger(__name__)
 random.seed()
 
 
-# returns dictionary of comparison between two profiles
 def compare_profiles(codons_count, host, relax):
+    """Compute the deviation from the expected codon usage based on a host
+    codon usage profile.
+
+    Note:
+        The `relax` parameter uniformly increases the host codon usage that
+        is used to estimate the number of times each codon should appear in
+        the sequence. These values are rounded and then iteratively adjusted
+        to be consistent with the length of the sequence of interest.
+        Increasing this parameter further distorts the codon use distribution
+        from the host.
+
+    Args:
+        codons_count (dict({str : int})): A dictionary with each codon as
+            keys and the number of times it appears in a gene as values.
+        host (dict({str : foat})): A dictionary with each codon as keys and the
+            frequency of its use in the host organism as values.
+        relax (float): The maximum deviation from the host profile to tolerate.
+
+    Returns:
+        dict({str : dict({str : int})}): A dictionary with
+            each codon as keys, and dictionaries of the difference between
+            the observed and expected codon usage.
+        float: The number of mutations per residue that are needed to make
+        the sequence match the host codon usage.
+    """
     logger.info("===== COMPARING PROFILES =====")
     table = {}
     # loop AAs
@@ -91,61 +115,125 @@ def compare_profiles(codons_count, host, relax):
                 "input_perc": codons_count[codon],
                 "ideal_usage_abs": ideal_usage_abs,
                 "ideal_usage": ideal_usage,
-                "host_perc": float(host[codon]),
+                "host_perc": host[codon],
             }
 
-        # if ideal number is too high, subtract from lowest host codon (that is not 0 already )
-        while tot_ideal > tot_usage:
-            lowest_table = temp_table
-            lowest_codon = min(
-                temp_table, key=lambda k: float(temp_table[k]["host_perc"])
-            )
-            while temp_table[lowest_codon]["ideal_usage"] == 0:
-                lowest_table = removekey(lowest_table, lowest_codon)
-                lowest_codon = min(
-                    lowest_table, key=lambda k: float(lowest_table[k]["host_perc"])
-                )
+        # account for rounding issues and relaxation of the host profile
+        # by adjusting the most- and least-used codons as necessary
 
-            temp_table[lowest_codon]["ideal_usage"] -= 1
+        # if the calculated usage exceeds the actual usage, subtract one from
+        # the "ideal_use" of the least-used host codon that appears in the sequence
+        while tot_ideal > tot_usage:
+            codon = min(
+                [c for c, d in temp_table.items() if d["ideal_usage"] > 0],
+                key=lambda codon: temp_table[codon]["host_perc"],
+            )
+            temp_table[codon]["ideal_usage"] -= 1
             tot_ideal -= 1
 
-        # if ideal number is too low, add to highest host codon
+        # if the calculated usage is less than the actual usage, add one to
+        # the "ideal_use" of the most-used host codon
         while tot_ideal < tot_usage:
-            highest_codon = max(
-                temp_table, key=lambda k: float(temp_table[k]["host_perc"])
-            )
-            temp_table[highest_codon]["ideal_usage"] = (
-                temp_table[highest_codon]["ideal_usage"] + 1
-            )
+            codon = max(temp_table, key=lambda codon: temp_table[codon]["host_perc"])
+            temp_table[codon]["ideal_usage"] += 1
             tot_ideal += 1
 
         # populate return table
-        for codon in synonymous_codons:
+        for codon, usage in temp_table.items():
             table[codon] = {
-                "input_count": temp_table[codon]["input_count"],
-                "ideal_usage_abs": temp_table[codon]["ideal_usage_abs"],
-                "difference": temp_table[codon]["input_count"]
-                - temp_table[codon]["ideal_usage"],
-                "difference_abs": temp_table[codon]["input_count"]
-                - temp_table[codon]["ideal_usage_abs"],
+                "input_count": usage["input_count"],
+                "ideal_usage_abs": usage["ideal_usage_abs"],
+                "difference": usage["input_count"] - usage["ideal_usage"],
+                "difference_abs": usage["input_count"] - usage["ideal_usage_abs"],
             }
 
     # calculate difference value
-    resi_total = 0
-    diff_total = 0
-    for AA, synonymous_codons in CodonUsage.SynonymousCodons.items():
+    number_of_residues, diff_total = 0, 0
+    for _, synonymous_codons in CodonUsage.SynonymousCodons.items():
         for codon in synonymous_codons:
-            resi_total += table[codon]["ideal_usage_abs"]
+            number_of_residues += table[codon]["ideal_usage_abs"]
             diff_total += abs(table[codon]["difference_abs"])
 
+    diff_total /= 2  # convert to the number of mutations needed
+    diff = diff_total / number_of_residues
     logger.info(
-        "CURRENT DIFFERENCE TOTAL: {0} of {1}".format(int(diff_total / 2), resi_total)
+        "CURRENT DIFFERENCE TOTAL: {0} of {1}".format(
+            int(diff_total), number_of_residues
+        )
     )
-
-    logger.info("CURRENT DIFFERENCE %: {0}".format(diff_total / resi_total / 2))
-    diff = diff_total / resi_total / 2
+    logger.info("CURRENT DIFFERENCE %: {0}".format(diff))
 
     return table, diff
+
+
+# returns mutated sequence after given a difference profile
+def harmonize_codon_use_with_host(dna_sequence, mutation_profile):
+    """Adjust the codon usage in the DNA sequence to be consistent with
+    the host profile.
+
+    Args:
+        dna_sequence (Bio.Seq.Seq): A read-only representation of
+            the DNA sequence.
+        mutation_profile (dict({str : dict({str : int})})): A dictionary
+            with each codon as keys, and dictionaries of the difference
+            between the observed and expected codon usage.
+
+    Returns:
+        Bio.Seq.Seq: A read-only representation of the new DNA sequence.
+    """
+    logger.info("===== OPTIMIZING SEQENCE =====")
+
+    mutable_seq = dna_sequence.tomutable()
+    for _, synonymous_codons in CodonUsage.SynonymousCodons.items():
+        # get the index of relevant codons in the sequence
+        mutation_table = {}
+        for codon in synonymous_codons:
+            mutation_table[codon] = {
+                "difference": mutation_profile[codon]["difference"]
+            }
+
+            pos_list = []
+            for i in range(0, len(mutable_seq), 3):
+                codon_idx = slice(i, i + 3)
+                if mutable_seq[codon_idx] == codon:
+                    pos_list.append(codon_idx)
+
+            mutation_table[codon]["pos"] = pos_list
+
+        # check if this AA even needs to be adjsuted
+        tot_diff = sum(
+            abs(mutation_table[codon]["difference"]) for codon in synonymous_codons
+        )
+
+        while tot_diff > 0:
+            # randomly select a pair of codons to adjust
+            codon_to_remove = random.choice(
+                [c for c, d in mutation_table.items() if d["difference"] > 0]
+            )
+            codon_to_add = random.choice(
+                [c for c, d in mutation_table.items() if d["difference"] < 0]
+            )
+
+            # randomly select the position to update
+            codon_idx = random.choice(mutation_table[codon_to_remove]["pos"])
+
+            # remove from sequence
+            mutation_table[codon_to_remove]["pos"].remove(codon_idx)
+            mutation_table[codon_to_remove]["difference"] -= 1
+
+            # add to sequence
+            mutation_table[codon_to_add]["pos"].append(codon_idx)
+            mutation_table[codon_to_add]["difference"] += 1
+
+            mutable_seq[codon_idx] = codon_to_add
+
+            # update difference
+            tot_diff = sum(
+                abs(mutation_table[codon]["difference"]) for codon in synonymous_codons
+            )
+        # mutation_table now has difference = 0 for all codons
+
+    return mutable_seq.toseq()
 
 
 def mutate_codon(codon_in, codon_use_table):
@@ -332,7 +420,6 @@ def remove_start_sites(dna_sequence, ribosome_binding_sites, table_name="Standar
     Returns:
         Bio.Seq.Seq: A read-only representation of the new DNA sequence.
     """
-
     codon_table = CodonTable.unambiguous_dna_by_name[table_name]
     logger.info(
         "===== REMOVE START SITES: {0} =====".format(
@@ -455,9 +542,6 @@ def remove_repeating_sequences(dna_sequence, window_size):
                 for i in range(0, len(mutable_seq[window]), 3)
             ]
 
-            # TODO: do we only want to check the first three? the first n? or all?
-            # in this script the window is 9 bp, so it's only ever three codons
-
             # check if all codons in the window are identical
             if len(set(codons)) == 1:
                 logger.detail("All codons in window are identical: {0}".format(codons))
@@ -539,7 +623,7 @@ logger.info("Total number of sequences: {0}".format(len(records)))
 [logger.detail(record) for record in records]
 
 # generate host profile
-codon_use_table, codoon_relative_adativeness = codon_use.host_codon_usage(
+codon_use_table, host_profile, codoon_relative_adativeness = codon_use.host_codon_usage(
     args.host, args.host_threshold
 )
 
@@ -554,11 +638,6 @@ for count, record in enumerate(records):
     logger.detail("===== DUMPING SEQUENCE =====")
     logger.detail(str(dna))
 
-    # TODO: compare input and host profiles
-    # count codons and current profile
-    count_table = codon_use.count_codons(dna)
-    input_profile = codon_use.calc_profile(count_table)
-
     # intialize bookkeeping variables
     difference, current_cycle, relax, best_cai, best_dna_seq = 1.0, 1, 1.0, 0.0, Seq("")
 
@@ -572,9 +651,6 @@ for count, record in enumerate(records):
             )
         )
 
-        # TODO: measure the deviation from the host profile
-        # probably good to record the sequence that is closest
-        # but at the end, after all the clean up is done.
         dna = resample_codons(dna, codon_use_table)
 
         # identify and remove undesirable features
@@ -586,20 +662,16 @@ for count, record in enumerate(records):
         dna = remove_repeating_sequences(dna, 9)
         dna = remove_local_homopolymers(dna)
 
-        # count codons and current profile
+        # count codon usage in the sequence
         count_table = codon_use.count_codons(dna)
-        input_profile = codon_use.calc_profile(count_table)
 
-        # compare input and host profiles
-        """
-        # determine how much to relax harmonization
+        # adjust harmonization relax
         relax = 1 + (args.max_relax * ((current_cycle - 1) / args.cycles))
         logger.info("Relax coeff: {0}".format(relax))
 
-        mutation_table, difference = compare_profiles(
-            input_profile, host_profile, relax
-        )
-        """
+        # measure the deviation from the host profile and adjust accordingly
+        mutation_table, difference = compare_profiles(count_table, host_profile, relax)
+        dna = harmonize_codon_use_with_host(dna, mutation_table)
 
         # if the codon adaptation index is better than what we've
         # seen so far, store this sequence
@@ -624,7 +696,9 @@ for count, record in enumerate(records):
     logger.output("===== SEQUENCE NAME =====")
     logger.output("{0}".format(record.id))
 
-    # display final codon-use difference between host and current sequence (0.00 is ideal)
-    logger.output("({0})".format(round(difference, 2)))
+    logger.output(
+        "Final codon-use difference between host and current sequence "
+        + "(0.00 is ideal): {0}".format(round(difference, 2))
+    )
     logger.output("===== DUMPING SEQUENCE =====")
     logger.output(str(best_dna_seq))

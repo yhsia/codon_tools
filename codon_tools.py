@@ -95,6 +95,9 @@ def main(argv):
         args.host, args.host_threshold
     )
 
+    # initialize the restriction sites of interest
+    rest_enz = RestrictionEnzymes(args.restriction_enzymes)
+
     # process through all supplied sequences
     for seq_no, record in enumerate(SeqIO.parse(args.input, "fasta", IUPAC.protein)):
         logger.info(
@@ -128,7 +131,6 @@ def main(argv):
                 # check various GC content requirements
                 dna = seq_opt.gc_scan(dna, gc_content, codon_use_table)
 
-            rest_enz = RestrictionEnzymes(args.restriction_enzymes)
             if len(rest_enz):
                 dna = seq_opt.remove_restriction_sites(dna, rest_enz, codon_use_table)
             dna = seq_opt.remove_start_sites(dna, RibosomeBindingSites, codon_use_table)

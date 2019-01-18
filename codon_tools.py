@@ -2,6 +2,7 @@
 import argparse
 import random
 import sys
+import textwrap
 
 from Bio import SeqIO
 from Bio.Alphabet import IUPAC
@@ -168,10 +169,6 @@ def main(argv):
         if gc_percent < 0.3 or gc_percent > 0.65:
             logger.warning("Overall GC content is {0}!".format(gc_percent))
 
-        # display result name and sequence
-        logger.output("===== SEQUENCE NAME =====")
-        logger.output("{0}".format(record.id))
-
         # measure the final deviation from the host profile
         _, difference = seq_opt.compare_profiles(
             codon_use.count_codons(best_dna_seq), host_profile, relax
@@ -181,8 +178,11 @@ def main(argv):
             "Final codon-use difference between host and current sequence "
             + "(0.00 is ideal): {0}".format(round(difference, 2))
         )
-        logger.output("===== DUMPING SEQUENCE =====")
-        logger.output(str(best_dna_seq))
+
+        logger.output("===== NAME AND SEQUENCE =====")
+        print(
+            ">{0}\n{1}".format(record.id, "\n".join(textwrap.wrap(str(best_dna_seq))))
+        )
 
 
 if __name__ == "__main__":

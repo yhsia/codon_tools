@@ -127,7 +127,7 @@ def main(argv):
             dna = seq_opt.remove_restriction_sites(
                 dna, RestrictionEnzymes(), codon_use_table
             )
-            dna = seq_opt.remove_start_sites(dna, RibosomeBindingSites, "Standard")
+            dna = seq_opt.remove_start_sites(dna, RibosomeBindingSites, codon_use_table)
             dna = seq_opt.remove_repeating_sequences(dna, 9, codon_use_table)
             dna = seq_opt.remove_local_homopolymers(
                 dna,
@@ -171,6 +171,11 @@ def main(argv):
         # display result name and sequence
         logger.output("===== SEQUENCE NAME =====")
         logger.output("{0}".format(record.id))
+
+        # measure the final deviation from the host profile
+        _, difference = seq_opt.compare_profiles(
+            codon_use.count_codons(best_dna_seq), host_profile, relax
+        )
 
         logger.output(
             "Final codon-use difference between host and current sequence "

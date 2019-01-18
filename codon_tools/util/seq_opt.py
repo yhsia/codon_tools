@@ -265,14 +265,14 @@ def resample_codons_and_enforce_host_profile(
         Bio.Seq.Seq: A read-only representation of the new DNA sequence.
     """
     logger.info("Relax coeff: {0}".format(relax))
-    dna = resample_codons(dna_sequence, codon_use_table)
+    dna_sequence = resample_codons(dna_sequence, codon_use_table)
 
     # measure the deviation from the host profile and adjust accordingly
     mutation_table, difference = compare_profiles(
         codon_use.count_codons(dna_sequence), host_profile, relax
     )
 
-    return harmonize_codon_use_with_host(dna, mutation_table)
+    return harmonize_codon_use_with_host(dna_sequence, mutation_table)
 
 
 def gc_scan(dna_sequence, gc, codon_use_table):

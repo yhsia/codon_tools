@@ -87,7 +87,7 @@ def main(argv):
     logger = logging.getLogger(__name__)
 
     random.seed()
-    logger.info("===== SCRIPT START =====")
+    logger.info("Beginning codon use optimization")
 
     # generate host profile
     codon_use_table, host_profile, codoon_relative_adativeness = codon_use.host_codon_usage(
@@ -100,14 +100,17 @@ def main(argv):
     # process through all supplied sequences
     for seq_no, record in enumerate(SeqIO.parse(args.input, "fasta", IUPAC.protein)):
         logger.info(
-            "===== PROCESSING SEQUENCE {} ===== {}".format(seq_no + 1, record.id)
+            "Processing sequence number {}:\n{}".format(
+                seq_no + 1, record.format("fasta")
+            )
         )
 
-        logger.info("INPUT IS AA SEQUENCE")
         dna = record.seq.back_translate()
-
-        logger.detail("===== DUMPING SEQUENCE =====")
-        logger.detail(str(dna))
+        logger.detail(
+            "Initial DNA sequence:\n{}".format(
+                SeqRecord(dna, id=record.id).format("fasta")
+            )
+        )
 
         # intialize bookkeeping variables
         difference, current_cycle, relax, best_cai, best_dna = 1.0, 1, 1.0, 0.0, ""
@@ -117,11 +120,7 @@ def main(argv):
         while current_cycle < args.cycles:  # and (difference >= (relax - 1)):
             # ensure cycle count is always incremented
             current_cycle += 1
-            logger.info(
-                "~~~~~~~~~~ Current cycle: {0}/{1} ~~~~~~~~~~".format(
-                    current_cycle, args.cycles
-                )
-            )
+            logger.info("Current cycle: {}/{}".format(current_cycle, args.cycles))
 
             # relax harmonization requirement
             relax = 1 + (args.max_relax * ((current_cycle - 1) / args.cycles))
@@ -165,19 +164,24 @@ def main(argv):
 
         # hit the max number of cycles?
         if current_cycle > args.cycles:
-            logger.info("You hit the max number of cycles: {}".format(args.cycles))
+            logger.info("You hit the max number of cycles ({})!".format(args.cycles))
 
         if isinstance(best_dna, str):
             logger.warning(
-                "Unable to create suitable DNA sequence for the input AA sequence."
+                "Unable to create suitable DNA sequence for input sequence {}.\n{}".format(
+                    seq_no + 1, record.format("fasta")
+                )
             )
             continue
 
+        logger.output("Optimized gene metrics and sequence")
         # check GC content
-        logger.info("===== GC CONTENT =====")
-        gc_percent = GC(best_dna.seq) / 100
-        if gc_percent < 0.3 or gc_percent > 0.65:
-            logger.warning("Overall GC content is {:.2f}!".format(gc_percent))
+        gc_frac = GC(best_dna.seq) / 100
+        logger.output("Final overall GC content is {:.0%}".format(gc_frac))
+        if gc_frac < 0.3 or gc_frac > 0.65:
+            logger.warning(
+                "The sequence's GC content ({:.2f}) is beyond normal ranges (0.3 > GC < 0.65)!"
+            )
 
         # measure the final deviation from the host profile
         _, difference = seq_opt.compare_profiles(
@@ -186,10 +190,9 @@ def main(argv):
 
         logger.output(
             "Final codon-use difference between host and current sequence "
-            + "(0.00 is ideal): {:.2f}".format(difference)
+            + "(0.00 is identical codon use): {:.2f}".format(difference)
         )
 
-        logger.output("===== NAME AND SEQUENCE =====")
         logger.output("The designed gene's CAI is: {:.2f}".format(best_cai))
         print(best_dna.format("fasta"))
 

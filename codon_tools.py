@@ -80,9 +80,7 @@ def get_args(argv=None):
         + "(e.g. --restriction_enzymes NdeI XhoI HpaI). ",
     )
 
-    args = parser.parse_args(argv)
-
-    return args
+    return parser.parse_args(argv)
 
 
 def main(argv):

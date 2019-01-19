@@ -24,7 +24,7 @@ GCParams = namedtuple("GCParams", "name window_size low high")
 GC_content = [
     GCParams("IDT", 20, 0.15, 0.90),
     GCParams("twist", 50, 0.15, 0.80),
-    GCParams("IDT_long", 100, 0.28, 0.69),
+    GCParams("IDT_long", 100, 0.28, 0.68),
     GCParams("twist_long", "x3", 0.3, 0.65),
 ]
 

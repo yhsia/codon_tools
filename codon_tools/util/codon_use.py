@@ -17,7 +17,7 @@ def count_codons(dna_sequence):
         dict({str: int}): A dictionary with codons as keys and the
             corresponding number of occurences as values.
     """
-    logger.info("===== COUNTING CODONS =====")
+    logger.info("Counting codons used in sequence")
 
     codons_dict = CodonUsage.CodonsDict.copy()
     for codon_start in range(0, len(dna_sequence), 3):
@@ -39,7 +39,7 @@ def calc_profile(codons_count):
         dict({str: int}): A dictionary with codons as keys and the
             corresponding frequency of occurences as values.
     """
-    logger.info("===== CALCULATING PROFILE =====")
+    logger.info("Calculating codon use profile")
     codons_freq = CodonUsage.CodonsDict.copy()
 
     # loop through all amino acids
@@ -73,7 +73,7 @@ def calc_codon_relative_adaptiveness(codons_count):
         Bio.SeqUtils.CodonUsage.CodonAdaptationIndex: A CodonAdaptationIndex
             instance configured to calculate CAI for a target gene.
     """
-    logger.info("===== CALCULATING RELATIVE ADAPTIVENESS =====")
+    logger.info("Calculating relative adaptiveness of codon use")
     codons_rel_adapt = CodonUsage.CodonsDict.copy()
 
     # loop through all amino acids
@@ -96,11 +96,13 @@ def calc_codon_relative_adaptiveness(codons_count):
 
 
 def _load_host_table(host):
-    logger.info("===== PROCESSING HOST TABLE: {0} =====".format(host))
     table = CodonUsage.CodonsDict.copy()
 
     if host not in codon_tables and host in latin_name_to_tax_id:
-        host = latin_name_to_tax_id[host]
+        latin_name = host
+        host = latin_name_to_tax_id[latin_name]
+    elif host in codon_tables:
+        latin_name = [k for k, v in latin_name_to_tax_id.items() if v == host].pop()
 
     try:
         raw_table = codon_tables[host]
@@ -112,6 +114,11 @@ def _load_host_table(host):
             )
         )
     else:
+        logger.info(
+            "Processing host table for {} (NCBI taxonomy ID {})".format(
+                latin_name, host
+            )
+        )
         for codon, usage in raw_table.items():
             # codons are stored with RNA alphabet
             table[str(Seq(codon).back_transcribe())] = usage["count"]
@@ -134,13 +141,13 @@ def process_host_table(host, threshold):
     """
     table = _load_host_table(host)
 
-    logger.info("HOST THRESHOLD SET TO: {0}".format(threshold))
-    logger.detail("pre-threshold host table:")
+    logger.info("Host thresholf set to: {}".format(threshold))
+    logger.detail("Pre-threshold host table:")
 
     for AA, synonymous_codons in CodonUsage.SynonymousCodons.items():
-        logger.detail("== {0} ==".format(AA))
+        logger.detail("Amino acid: {}".format(AA))
         for codon in synonymous_codons:
-            logger.detail("{0}: {1}".format(codon, table[codon]))
+            logger.detail("{}: {}".format(codon, table[codon]))
             if table[codon] < threshold:
                 table[codon] = 0
 
@@ -148,11 +155,11 @@ def process_host_table(host, threshold):
     table = calc_profile(table)
 
     if logger.isEnabledFor(logging.DETAIL):
-        logger.detail("post-threshold host table:")
+        logger.detail("Post-threshold host table:")
         for AA, synonymous_codons in CodonUsage.SynonymousCodons.items():
-            logger.detail("== {0} ==".format(AA))
+            logger.detail("Amino acid: {}".format(AA))
             for codon in synonymous_codons:
-                logger.detail("{0}: {1}".format(codon, table[codon]))
+                logger.detail("{}: {}".format(codon, table[codon]))
 
     return table
 

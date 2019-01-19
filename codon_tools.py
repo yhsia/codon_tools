@@ -68,7 +68,7 @@ def get_args(argv=None):
         + "(e.g. --restriction_enzymes NdeI XhoI HpaI). ",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     return args
 
@@ -196,4 +196,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main(sys.argv[1:])

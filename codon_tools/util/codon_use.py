@@ -141,7 +141,7 @@ def process_host_table(host, threshold):
     """
     table = _load_host_table(host)
 
-    logger.info("Host thresholf set to: {}".format(threshold))
+    logger.info("Host threshold set to: {}".format(threshold))
     logger.detail("Pre-threshold host table:")
 
     for AA, synonymous_codons in CodonUsage.SynonymousCodons.items():

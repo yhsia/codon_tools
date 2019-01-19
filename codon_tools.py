@@ -141,7 +141,7 @@ def main(argv):
                 dna, codon_use_table, host_profile, relax
             )
 
-            # go through a few cycles with the same starting sequences to
+            # go through a few cycles with the same starting sequence to
             # allow iterative improvements to the same sample of codons
             for _ in range(args.inner_cycles):
                 # identify and remove undesirable features
@@ -183,7 +183,7 @@ def main(argv):
                 )
 
         logger.info(
-            "Completed {} independent codon samples and optimization!".format(
+            "Completed {} independent codon samples with optimization!".format(
                 args.cycles
             )
         )

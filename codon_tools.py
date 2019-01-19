@@ -23,6 +23,9 @@ def get_args(argv=None):
         "--input", type=str, required=True, help="input file with sequence"
     )
     parser.add_argument(
+        "--output", type=str, required=True, help="output file to write DNA sequence(s)"
+    )
+    parser.add_argument(
         "--host",
         type=str,
         default="413997",
@@ -89,6 +92,9 @@ def main(argv):
     random.seed()
     logger.info("Beginning codon use optimization")
 
+    # stores the final sequences
+    out_seqs = []
+
     # generate host profile
     codon_use_table, host_profile, codoon_relative_adativeness = codon_use.host_codon_usage(
         args.host, args.host_threshold
@@ -150,7 +156,7 @@ def main(argv):
             _, difference = seq_opt.compare_profiles(
                 codon_use.count_codons(dna), host_profile, relax
             )
-            if difference >= (relax - 1):
+            if difference >= args.max_relax:
                 continue
 
             # if the codon adaptation index is better than what we've
@@ -172,6 +178,7 @@ def main(argv):
                     seq_no + 1, record.format("fasta")
                 )
             )
+            print(best_cai)
             continue
 
         logger.output("Optimized gene metrics and sequence")
@@ -193,8 +200,14 @@ def main(argv):
             + "(0.00 is identical codon use): {:.2f}".format(difference)
         )
 
-        logger.output("The designed gene's CAI is: {:.2f}".format(best_cai))
-        print(best_dna.format("fasta"))
+        out_seqs.append(best_dna.format("fasta"))
+        logger.output(
+            "The designed gene's CAI is: {:.2f}\n{}".format(best_cai, out_seqs[-1])
+        )
+
+    # write sequences to file
+    with open(args.output, "w") as f:
+        f.write("".join(out_seqs))
 
 
 if __name__ == "__main__":

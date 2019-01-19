@@ -143,6 +143,7 @@ def main(argv):
                 n_codons=2,
                 homopolymer_threshold=args.local_homopolymer_threshold,
             )
+            dna = seq_opt.remove_hairpins(dna, codon_use_table, stem_length=10)
             if len(rest_enz):
                 dna = seq_opt.remove_restriction_sites(dna, rest_enz, codon_use_table)
 
@@ -166,6 +167,12 @@ def main(argv):
         # hit the max number of cycles?
         if current_cycle > args.cycles:
             logger.info("You hit the max number of cycles: {}".format(args.cycles))
+
+        if isinstance(best_dna, str):
+            logger.warning(
+                "Unable to create suitable DNA sequence for the input AA sequence."
+            )
+            continue
 
         # check GC content
         logger.info("===== GC CONTENT =====")

@@ -8,7 +8,7 @@ from Bio.Data import CodonTable
 from Bio.Restriction import Analysis
 from Bio.SeqUtils import CodonUsage, GC, seq3
 
-from . import Seq, codon_use
+from . import Seq, MutableSeq, codon_use
 
 logger = logging.getLogger(__name__)
 
@@ -567,7 +567,7 @@ def remove_repeating_sequences(dna_sequence, window_size, codon_use_table):
 def remove_local_homopolymers(
     dna_sequence, codon_use_table, n_codons=2, homopolymer_threshold=4
 ):
-    """Identify and remove consecutive streches of the same nucleotides
+    """Identify and remove consecutive stretches of the same nucleotides
     using a sliding window of a fixed number of codons.
 
     Args:
@@ -617,5 +617,40 @@ def remove_local_homopolymers(
                     mutable_seq[codon_idx], codon_use_table
                 )
             keep_looping = True
+
+    return mutable_seq.toseq()
+
+
+def remove_hairpins(dna_sequence, codon_use_table, stem_length=10):
+    """Identify and remove stretches of the equence that can form hairpins.
+
+    Args:
+        dna_sequence (Bio.Seq.Seq): A read-only representation of
+            the DNA sequence.
+        codon_use_table (dict({str : list[list, list]})): A dictionary with
+            each amino acid three-letter code as keys, and a list of two
+            lists as values. The first list is the synonymous codons that
+            encode the amino acid, the second is the frequency with which
+            each synonymouscodon is used.
+        stem_length (int, optional): Length of hairpin stem to detect.
+            Defaults to 10.
+
+    Returns:
+        Bio.Seq.Seq: A read-only representation of the new DNA sequence.
+    """
+    mutable_seq = dna_sequence.tomutable()
+    for i in range(0, len(mutable_seq), stem_length):
+        stem_seq = mutable_seq[i : i + stem_length].toseq()
+        # include wobble base pairing for G-[CT]
+        hairpin_pattern = "".join(
+            [nt if nt != "C" else "[CT]" for nt in stem_seq.reverse_complement()]
+        )
+        for hairpin in re.finditer(hairpin_pattern, str(mutable_seq)):
+            # floor start, ceil end
+            pos = random.randint(hairpin.start() // 3, -(-hairpin.end() // 3))
+            codon_idx = slice(pos * 3, (pos + 1) * 3)
+            mutable_seq[codon_idx] = mutate_codon(
+                mutable_seq[codon_idx], codon_use_table
+            )
 
     return mutable_seq.toseq()

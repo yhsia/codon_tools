@@ -83,7 +83,6 @@ def main(argv):
         argv (list[str]): Command line arguments passed into the function.
     """
     args = get_args(argv)
-    global logger
     logging.basicConfig(level=log_levels[args.verbose])
     logger = logging.getLogger(__name__)
 

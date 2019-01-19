@@ -302,7 +302,7 @@ def gc_scan(dna_sequence, codon_use_table, gc):
         Bio.Seq.Seq: A read-only representation of the new DNA sequence.
     """
     logger.info(
-        "GC content scan -- window_size: {} nucleotides; threshold: {} < x < {}".format(
+        "GC content scan -- window_size: {} nucleotides, threshold: {} < x < {}".format(
             gc.window_size, gc.low, gc.high
         )
     )

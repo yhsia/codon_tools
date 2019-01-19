@@ -648,6 +648,11 @@ def remove_hairpins(dna_sequence, codon_use_table, stem_length=10):
         for hairpin in re.finditer(hairpin_pattern, str(mutable_seq)):
             # floor start, ceil end
             pos = random.randint(hairpin.start() // 3, -(-hairpin.end() // 3))
+
+            # don't run off the end of the sequence
+            if (pos + 1) * 3 > len(mutable_seq):
+                pos -= 1
+
             codon_idx = slice(pos * 3, (pos + 1) * 3)
             mutable_seq[codon_idx] = mutate_codon(
                 mutable_seq[codon_idx], codon_use_table

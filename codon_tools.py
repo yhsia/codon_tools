@@ -101,7 +101,7 @@ def main(argv):
     # process through all supplied sequences
     for seq_no, record in enumerate(SeqIO.parse(args.input, "fasta", IUPAC.protein)):
         logger.info(
-            "===== PROCESSING SEQUENCE {0} ===== {1}".format(seq_no + 1, record.id)
+            "===== PROCESSING SEQUENCE {} ===== {}".format(seq_no + 1, record.id)
         )
 
         # check input seq style
@@ -150,6 +150,7 @@ def main(argv):
             # seen so far, store this sequence
             cai = codoon_relative_adativeness.cai_for_gene(str(dna))
             if cai > best_cai:
+                best_cai = cai
                 best_dna = SeqRecord(
                     dna, id=record.id, name=record.name, description=record.description
                 )
@@ -159,13 +160,13 @@ def main(argv):
 
         # hit the max number of cycles?
         if current_cycle > args.cycles:
-            logger.info("You hit the max number of cycles: {0}".format(args.cycles))
+            logger.info("You hit the max number of cycles: {}".format(args.cycles))
 
         # check GC content
         logger.info("===== GC CONTENT =====")
-        gc_percent = round(GC(best_dna.seq) / 100, 3)
+        gc_percent = GC(best_dna.seq) / 100
         if gc_percent < 0.3 or gc_percent > 0.65:
-            logger.warning("Overall GC content is {0}!".format(gc_percent))
+            logger.warning("Overall GC content is {:.2f}!".format(gc_percent))
 
         # measure the final deviation from the host profile
         _, difference = seq_opt.compare_profiles(
@@ -174,10 +175,11 @@ def main(argv):
 
         logger.output(
             "Final codon-use difference between host and current sequence "
-            + "(0.00 is ideal): {0}".format(round(difference, 2))
+            + "(0.00 is ideal): {:.2f}".format(difference)
         )
 
         logger.output("===== NAME AND SEQUENCE =====")
+        logger.output("The designed gene's CAI is: {:.2f}".format(best_cai))
         print(best_dna.format("fasta"))
 
 

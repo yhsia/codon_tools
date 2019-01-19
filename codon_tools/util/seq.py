@@ -1,13 +1,14 @@
 import Bio
 
-from Bio.Seq import Seq, MutableSeq
 from Bio.Alphabet import IUPAC
+from Bio.Seq import MutableSeq, Seq
 from Bio.SeqUtils import CodonUsage, seq3
 
 
-# reverse translate AA seq to DNA seq
 def back_translate(self):
     """Return the DNA sequence from an amino acid sequence by creating a new Seq object.
+    The first codon in the synonymous codons list is always chosen for each amino acid;
+    codon optimization is required after back translation.
 
     >>> from Bio.Seq import Seq
     >>> from Bio.Alphabet import IUPAC
@@ -30,8 +31,7 @@ def back_translate(self):
     if not isinstance(base, Bio.Alphabet.ProteinAlphabet):
         raise ValueError("Nucleic acids cannot be back translated!")
 
-    # right now this just uses the most-prevalent codon for each AA
-    # TODO: select codons with a weighted average using random.choice
+    # always use the first codon in the synonymous codons list for each AA
     return Seq(
         "".join([CodonUsage.SynonymousCodons[seq3(AA).upper()][0] for AA in str(self)]),
         IUPAC.unambiguous_dna,

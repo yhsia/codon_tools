@@ -40,7 +40,7 @@ def mutate_codon(codon_in, codon_use_table):
         codon_out = random.choices(synonymous_codons, codon_use_freq).pop()
 
     logger.detail(
-        "mutating [{0}] codon from {1} to {2}".format(AA, codon_in[1], codon_out)
+        "mutating [{}] codon from {} to {}".format(AA, codon_in[1], codon_out)
     )
 
     return codon_out
@@ -114,7 +114,7 @@ def compare_profiles(codons_count, host_profile, relax):
         for codon in synonymous_codons:
             ideal_usage_abs = int(round(host_profile[codon] * tot_usage, 0))
             ideal_usage = int(round(host_profile[codon] * relax * tot_usage, 0))
-            logger.detail("{0}: {1}".format(codon, ideal_usage))
+            logger.detail("{}: {}".format(codon, ideal_usage))
             tot_ideal += ideal_usage
             temp_table[codon] = {
                 "input_count": codons_count[codon],
@@ -163,11 +163,9 @@ def compare_profiles(codons_count, host_profile, relax):
     diff_total /= 2  # convert to the number of mutations needed
     diff = diff_total / number_of_residues
     logger.info(
-        "CURRENT DIFFERENCE TOTAL: {0} of {1}".format(
-            int(diff_total), number_of_residues
-        )
+        "CURRENT DIFFERENCE TOTAL: {} of {}".format(int(diff_total), number_of_residues)
     )
-    logger.info("CURRENT DIFFERENCE %: {0}".format(diff))
+    logger.info("CURRENT DIFFERENCE %: {}".format(diff))
 
     return table, diff
 
@@ -264,7 +262,7 @@ def resample_codons_and_enforce_host_profile(
     Returns:
         Bio.Seq.Seq: A read-only representation of the new DNA sequence.
     """
-    logger.info("Relax coeff: {0}".format(relax))
+    logger.info("Relax coeff: {}".format(relax))
     dna_sequence = resample_codons(dna_sequence, codon_use_table)
 
     # measure the deviation from the host profile and adjust accordingly
@@ -304,7 +302,7 @@ def gc_scan(dna_sequence, gc, codon_use_table):
         Bio.Seq.Seq: A read-only representation of the new DNA sequence.
     """
     logger.info(
-        "===== GC CONTENT SCAN IN WINDOW: {0} bps, threshold: {1} < x < {2}=====".format(
+        "===== GC CONTENT SCAN IN WINDOW: {} bps, threshold: {} < x < {}=====".format(
             gc.window_size, gc.low, gc.high
         )
     )
@@ -327,7 +325,7 @@ def gc_scan(dna_sequence, gc, codon_use_table):
             if (i + codon_window) * 3 < len(mutable_seq)
             else len(mutable_seq),
         )
-        logger.debug("Current segment: {0}".format(mutable_seq[window]))
+        logger.debug("Current segment: {}".format(mutable_seq[window]))
 
         gc_percent = GC(mutable_seq[window]) / 100
         count = 0  # counter to prevent infinite loop
@@ -345,7 +343,7 @@ def gc_scan(dna_sequence, gc, codon_use_table):
                 GC(new_codon) > GC(init_codon) and gc_percent < gc.low
             ):
                 mutable_seq[codon_idx] = new_codon
-                logger.debug("Mutating position: {0}".format(position))
+                logger.debug("Mutating position: {}".format(position))
                 gc_percent = GC(mutable_seq[window]) / 100
 
             count += 1
@@ -382,7 +380,7 @@ def remove_restriction_sites(dna_sequence, restrict_sites, codon_use_table):
     for enz, cuts in result.items():
         for cut in cuts:
             logger.info(
-                "The restriction enzyme {0} can cut the sequence before position {1}!".format(
+                "The restriction enzyme {} can cut the sequence before position {}!".format(
                     str(enz), cuts
                 )
             )
@@ -427,9 +425,7 @@ def remove_start_sites(
     """
     codon_table = CodonTable.unambiguous_dna_by_name[table_name]
     logger.info(
-        "===== REMOVE START SITES: {0} =====".format(
-            ", ".join(codon_table.start_codons)
-        )
+        "===== REMOVE START SITES: {} =====".format(", ".join(codon_table.start_codons))
     )
 
     # find all start codon sites (xTG)
@@ -444,7 +440,7 @@ def remove_start_sites(
         return dna_sequence
 
     logger.info(
-        "Found {0} start codons. Checking for upstream RBSs...".format(
+        "Found {} start codons. Checking for upstream RBSs...".format(
             len(start_codon_positions)
         )
     )
@@ -463,14 +459,14 @@ def remove_start_sites(
         rbs_query_seq = str(mutable_seq[rbs_start:rbs_stop])
 
         logger.detail(
-            "checking sequence: {0}.{1}".format(
+            "checking sequence: {}.{}".format(
                 rbs_query_seq, mutable_seq[rbs_stop : rbs_stop + 6]
             )
         )
 
         # check each unwanted RBS in each potential fragment
         for rbs, site in ribosome_binding_sites.items():
-            logger.detail("checking start site: {0}, {1}".format(rbs, site))
+            logger.detail("checking start site: {}, {}".format(rbs, site))
             search = rbs_query_seq.find(site)
 
             count = 0  # counter to prevent infinite loop
@@ -509,13 +505,11 @@ def remove_repeating_sequences(dna_sequence, window_size, codon_use_table):
     Returns:
         Bio.Seq.Seq: A read-only representation of the new DNA sequence.
     """
-    logger.info(
-        "===== REPEAT FRAGMENT SCAN FOR SIZE: {0} bps =====".format(window_size)
-    )
+    logger.info("===== REPEAT FRAGMENT SCAN FOR SIZE: {} bps =====".format(window_size))
 
     def _mutate_and_keep_looping(mutable_seq, window, offset):
         num_mutations = random.randint(1, 2)
-        logger.debug("Mutating {0} codons".format(num_mutations))
+        logger.debug("Mutating {} codons".format(num_mutations))
         for _ in range(num_mutations):
             position = random.randrange(0, len(mutable_seq[window]), 3)
             codon_idx = slice(offset + position, (offset + 3) + position)
@@ -554,7 +548,7 @@ def remove_repeating_sequences(dna_sequence, window_size, codon_use_table):
 
             # check if all codons in the window are identical
             if len(set(codons)) == 1:
-                logger.detail("All codons in window are identical: {0}".format(codons))
+                logger.detail("All codons in window are identical: {}".format(codons))
                 keep_looping = _mutate_and_keep_looping(mutable_seq, window, (i * 3))
 
             # check if the segment is found in the full sequence
@@ -614,8 +608,8 @@ def remove_local_homopolymers(
                 keep_looping = False
                 continue
 
-            logger.detail("position: {0}: {1}".format(i, seq))
-            logger.detail("{0}, count={1}".format(letter, nt_counts[letter]))
+            logger.detail("position: {}: {}".format(i, seq))
+            logger.detail("{}, count={}".format(letter, nt_counts[letter]))
 
             for j in range(n_codons):
                 codon_idx = slice(i + (j * 3), i + ((j + 1) * 3))

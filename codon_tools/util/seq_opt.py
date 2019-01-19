@@ -273,11 +273,12 @@ def resample_codons_and_enforce_host_profile(
     return harmonize_codon_use_with_host(dna_sequence, mutation_table)
 
 
-def gc_scan(dna_sequence, gc, codon_use_table):
+def gc_scan(dna_sequence, codon_use_table, gc):
     """Scan across a sequence and replace codons to acheive a desired GC
     content within the window.
+
     Note:
-        The following fields in the `GCParams` type are used in this
+        The following fields of the `GCParams` type are used in this
         function:
 
         window_size (int): Size of sliding window (in nucelotides) to
@@ -290,13 +291,13 @@ def gc_scan(dna_sequence, gc, codon_use_table):
     Args:
         dna_sequence (Bio.Seq.Seq): A read-only representation of
             the DNA sequence.
-        gc (GCParams): A `namedtuple` with fields for name, window_size,
-            minimum and maximum GC content.
         codon_use_table (dict({str : list[list, list]})): A dictionary with
             each amino acid three-letter code as keys, and a list of two
             lists as values. The first list is the synonymous codons that
             encode the amino acid, the second is the frequency with which
             each synonymouscodon is used.
+        gc (GCParams): A `namedtuple` with fields for name, window_size,
+            minimum and maximum GC content.
 
     Returns:
         Bio.Seq.Seq: A read-only representation of the new DNA sequence.
@@ -351,20 +352,20 @@ def gc_scan(dna_sequence, gc, codon_use_table):
     return mutable_seq.toseq()
 
 
-def remove_restriction_sites(dna_sequence, restrict_sites, codon_use_table):
+def remove_restriction_sites(dna_sequence, codon_use_table, restrict_sites):
     """Identify and remove seuences recognized by a set of restriction
     enzymes.
 
     Args:
         dna_sequence (Bio.Seq.Seq): A read-only representation of
             the DNA sequence.
-        restrict_sites (Bio.Restriction.RestrictionBatch): RestrictionBatch
-            instance configured with the input restriction enzymes.
         codon_use_table (dict({str : list[list, list]})): A dictionary with
             each amino acid three-letter code as keys, and a list of two
             lists as values. The first list is the synonymous codons that
             encode the amino acid, the second is the frequency with which
             each synonymouscodon is used.
+        restrict_sites (Bio.Restriction.RestrictionBatch): RestrictionBatch
+            instance configured with the input restriction enzymes.
 
     Returns:
         Bio.Seq.Seq: A read-only representation of the new DNA sequence.
@@ -400,7 +401,7 @@ def remove_restriction_sites(dna_sequence, restrict_sites, codon_use_table):
 
 
 def remove_start_sites(
-    dna_sequence, ribosome_binding_sites, codon_use_table, table_name="Standard"
+    dna_sequence, codon_use_table, ribosome_binding_sites, table_name="Standard"
 ):
     """Identify and remove alternate start sites using a supplied set of
     ribosome binding sites and a codon table name.
@@ -408,14 +409,14 @@ def remove_start_sites(
     Args:
         dna_sequence (Bio.Seq.Seq): A read-only representation of
             the DNA sequence.
-        ribosome_binding_sites (dict({str : str})): A dictionary with named
-            ribosome binding sites as keys and the corresponding sequences
-            as values.
         codon_use_table (dict({str : list[list, list]})): A dictionary with
             each amino acid three-letter code as keys, and a list of two
             lists as values. The first list is the synonymous codons that
             encode the amino acid, the second is the frequency with which
             each synonymouscodon is used.
+        ribosome_binding_sites (dict({str : str})): A dictionary with named
+            ribosome binding sites as keys and the corresponding sequences
+            as values.
         table_name (str, optional): Name of a registered NCBI table. See
             `Bio.Data.CodonTable.unambiguous_dna_by_name.keys()` for
             options. Defaults to "Standard".
@@ -486,21 +487,21 @@ def remove_start_sites(
     return mutable_seq.toseq()
 
 
-def remove_repeating_sequences(dna_sequence, window_size, codon_use_table):
+def remove_repeating_sequences(dna_sequence, codon_use_table, window_size):
     """Idenify and remove repeating sequences of codons or groups of
     codons within a DNA sequence.
 
     Args:
         dna_sequence (Bio.Seq.Seq): A read-only representation of
             the DNA sequence.
-        window_size (int): Size the window (in nucleotides) to examine.
-            Window sizes are adjusted down to the nearest multiple of 3 so
-            windows only contain complete codons.
         codon_use_table (dict({str : list[list, list]})): A dictionary with
             each amino acid three-letter code as keys, and a list of two
             lists as values. The first list is the synonymous codons that
             encode the amino acid, the second is the frequency with which
             each synonymouscodon is used.
+        window_size (int): Size the window (in nucleotides) to examine.
+            Window sizes are adjusted down to the nearest multiple of 3 so
+            windows only contain complete codons.
 
     Returns:
         Bio.Seq.Seq: A read-only representation of the new DNA sequence.

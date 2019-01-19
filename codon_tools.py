@@ -133,10 +133,10 @@ def main(argv):
             # identify and remove undesirable features
             for gc_content in GC_content:
                 # check various GC content requirements
-                dna = seq_opt.gc_scan(dna, gc_content, codon_use_table)
+                dna = seq_opt.gc_scan(dna, codon_use_table, gc_content)
 
-            dna = seq_opt.remove_start_sites(dna, RibosomeBindingSites, codon_use_table)
-            dna = seq_opt.remove_repeating_sequences(dna, 9, codon_use_table)
+            dna = seq_opt.remove_start_sites(dna, codon_use_table, RibosomeBindingSites)
+            dna = seq_opt.remove_repeating_sequences(dna, codon_use_table, 9)
             dna = seq_opt.remove_local_homopolymers(
                 dna,
                 codon_use_table,
@@ -145,7 +145,7 @@ def main(argv):
             )
             dna = seq_opt.remove_hairpins(dna, codon_use_table, stem_length=10)
             if len(rest_enz):
-                dna = seq_opt.remove_restriction_sites(dna, rest_enz, codon_use_table)
+                dna = seq_opt.remove_restriction_sites(dna, codon_use_table, rest_enz)
 
             # measure the deviation from the host profile post-cleanup
             # only move forward if we haven't deviated too much from host

@@ -104,7 +104,6 @@ def main(argv):
             "===== PROCESSING SEQUENCE {} ===== {}".format(seq_no + 1, record.id)
         )
 
-        # check input seq style
         logger.info("INPUT IS AA SEQUENCE")
         dna = record.seq.back_translate()
 
@@ -114,10 +113,11 @@ def main(argv):
         # intialize bookkeeping variables
         difference, current_cycle, relax, best_cai, best_dna = 1.0, 1, 1.0, 0.0, ""
 
+        args.cycles = 1 if args.cycles == 0 else args.cycles
         # keep running while there are cycles AND difference between current and host is less than the % relax allowed
-        while ((current_cycle <= args.cycles) or (args.cycles == 0)) and (
-            difference >= (relax - 1)
-        ):
+        while current_cycle < args.cycles:  # and (difference >= (relax - 1)):
+            # ensure cycle count is always incremented
+            current_cycle += 1
             logger.info(
                 "~~~~~~~~~~ Current cycle: {0}/{1} ~~~~~~~~~~".format(
                     current_cycle, args.cycles
@@ -146,6 +146,14 @@ def main(argv):
             if len(rest_enz):
                 dna = seq_opt.remove_restriction_sites(dna, rest_enz, codon_use_table)
 
+            # measure the deviation from the host profile post-cleanup
+            # only move forward if we haven't deviated too much from host
+            _, difference = seq_opt.compare_profiles(
+                codon_use.count_codons(dna), host_profile, relax
+            )
+            if difference >= (relax - 1):
+                continue
+
             # if the codon adaptation index is better than what we've
             # seen so far, store this sequence
             cai = codoon_relative_adativeness.cai_for_gene(str(dna))
@@ -154,9 +162,6 @@ def main(argv):
                 best_dna = SeqRecord(
                     dna, id=record.id, name=record.name, description=record.description
                 )
-
-            # tick cycle
-            current_cycle += 1
 
         # hit the max number of cycles?
         if current_cycle > args.cycles:

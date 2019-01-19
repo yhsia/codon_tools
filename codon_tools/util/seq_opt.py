@@ -313,7 +313,7 @@ def gc_scan(dna_sequence, gc, codon_use_table):
         window_size = int(float(window_size[1:]) * len(dna_sequence))
 
     # iterate across overlapping chunks of complete codons
-    codon_window = window_size // 3
+    codon_window = window_size // 3 + 1
     overlap = codon_window // 2
     mutable_seq = dna_sequence.tomutable()
 

@@ -5,7 +5,7 @@ Species-specifc data can be found on the [Codon Usage Database](http://www.kazus
 ## Use
 
 ```sh
-$python codon_tools.py --input INPUT_LIST.fasta
+$python codon_tools.py --input misc/INPUT_LIST.fasta --output out.fasta
 ```
 
 To get started, create a conda environment from the `environment.yml` file.
@@ -14,7 +14,7 @@ To get started, create a conda environment from the `environment.yml` file.
 conda env create -f environment.yml
 ```
 
-example contents of `INPUT_LIST.fasta`:
+contents of `misc/INPUT_LIST.fasta`:
 
 ```
 >SEQ_1
@@ -38,8 +38,9 @@ ACDEFGHIKLMNPQRSTVWY
 The process is repeated from step 3 for a specified number of cycles (defaults to 1000) OR until the per-AA codon profile of current DNA and host profile matches (within tolerance).
 
 ## To do
-- [ ] remove RNA structure from sequence
-    * [CONTRAfold](http://contra.stanford.edu/contrafold/)
-    * [nupack](http://nupack.org)
+- [x] remove RNA structure from sequence
+    * ~[CONTRAfold](http://contra.stanford.edu/contrafold/)~ overkill for now
+    * ~[nupack](http://nupack.org)~ overkill for now
+    * restrict structure to hairpins, detected by looking for 10-mers with reverse complements (including wobble bases) in the sequence
 - [ ] remove predicted splice sites
 - [x] store "best" sequence by codon adaptation index relative to host and return that to the user

@@ -29,7 +29,8 @@ def get_args(argv=None):
         "--host",
         type=str,
         default="413997",
-        help='host table code: http://www.kazusa.or.jp/codon/, default is "Escherichia coli B"',
+        help="host table code: http://www.kazusa.or.jp/codon/, default is "
+        + '"Escherichia coli B"',
     )
     parser.add_argument(
         "--host_threshold",
@@ -42,7 +43,8 @@ def get_args(argv=None):
         type=int,
         default=0,
         choices=[0, 1, 2, 3],
-        help="verbose output level (0=only result, 1=standard output, 2=extra output 3=debugging)",
+        help="verbose output level (0=only result, 1=standard output, "
+        + "2=extra output 3=debugging)",
     )
     parser.add_argument(
         "--local_homopolymer_threshold",
@@ -53,8 +55,15 @@ def get_args(argv=None):
     parser.add_argument(
         "--cycles",
         type=int,
-        default=1000,
-        help="max number of cycles to run optimization, 0=unlimited",
+        default=100,
+        help="number of independent codon samples to run. 0 means 1 pass",
+    )
+    parser.add_argument(
+        "--inner_cycles",
+        type=int,
+        default=10,
+        help="number of times to iteratively optimize each independent codon"
+        + " sample. 0 means 1 pass",
     )
     parser.add_argument(
         "--max_relax",
@@ -119,37 +128,44 @@ def main(argv):
         )
 
         # intialize bookkeeping variables
-        difference, current_cycle, relax, best_cai, best_dna = 1.0, 1, 1.0, 0.0, ""
+        best_cai, best_dna = 0.0, ""
 
         args.cycles = 1 if args.cycles == 0 else args.cycles
-        # keep running while there are cycles AND difference between current and host is less than the % relax allowed
-        while current_cycle < args.cycles:  # and (difference >= (relax - 1)):
-            # ensure cycle count is always incremented
-            current_cycle += 1
-            logger.info("Current cycle: {}/{}".format(current_cycle, args.cycles))
+        args.inner_cycles = 1 if args.inner_cycles == 0 else args.inner_cycles
+
+        # run `args.cycles` independent trials
+        for sample_no in range(args.cycles):
+            logger.info("Current sample no: {}/{}".format(sample_no + 1, args.cycles))
 
             # relax harmonization requirement
-            relax = 1 + (args.max_relax * ((current_cycle - 1) / args.cycles))
+            relax = 1 + (args.max_relax * ((sample_no + 1) / (args.cycles)))
             dna = seq_opt.resample_codons_and_enforce_host_profile(
                 dna, codon_use_table, host_profile, relax
             )
 
-            # identify and remove undesirable features
-            for gc_content in GC_content:
-                # check various GC content requirements
-                dna = seq_opt.gc_scan(dna, codon_use_table, gc_content)
+            # go through a few cycles with the same starting sequences to
+            # allow iterative improvements to the same sample of codons
+            for _ in range(args.inner_cycles):
+                # identify and remove undesirable features
+                for gc_content in GC_content:
+                    # check various GC content requirements
+                    dna = seq_opt.gc_scan(dna, codon_use_table, gc_content)
 
-            dna = seq_opt.remove_start_sites(dna, codon_use_table, RibosomeBindingSites)
-            dna = seq_opt.remove_repeating_sequences(dna, codon_use_table, 9)
-            dna = seq_opt.remove_local_homopolymers(
-                dna,
-                codon_use_table,
-                n_codons=2,
-                homopolymer_threshold=args.local_homopolymer_threshold,
-            )
-            dna = seq_opt.remove_hairpins(dna, codon_use_table, stem_length=10)
-            if len(rest_enz):
-                dna = seq_opt.remove_restriction_sites(dna, codon_use_table, rest_enz)
+                dna = seq_opt.remove_start_sites(
+                    dna, codon_use_table, RibosomeBindingSites
+                )
+                dna = seq_opt.remove_repeating_sequences(dna, codon_use_table, 9)
+                dna = seq_opt.remove_local_homopolymers(
+                    dna,
+                    codon_use_table,
+                    n_codons=2,
+                    homopolymer_threshold=args.local_homopolymer_threshold,
+                )
+                dna = seq_opt.remove_hairpins(dna, codon_use_table, stem_length=10)
+                if len(rest_enz):
+                    dna = seq_opt.remove_restriction_sites(
+                        dna, codon_use_table, rest_enz
+                    )
 
             # measure the deviation from the host profile post-cleanup
             # only move forward if we haven't deviated too much from host
@@ -168,9 +184,11 @@ def main(argv):
                     dna, id=record.id, name=record.name, description=record.description
                 )
 
-        # hit the max number of cycles?
-        if current_cycle > args.cycles:
-            logger.info("You hit the max number of cycles ({})!".format(args.cycles))
+        logger.info(
+            "Completed {} independent codon samples and optimization!".format(
+                args.cycles
+            )
+        )
 
         if isinstance(best_dna, str):
             logger.warning(
@@ -178,7 +196,6 @@ def main(argv):
                     seq_no + 1, record.format("fasta")
                 )
             )
-            print(best_cai)
             continue
 
         logger.output("Optimized gene metrics and sequence")
@@ -196,8 +213,9 @@ def main(argv):
         )
 
         logger.output(
-            "Final codon-use difference between host and current sequence "
-            + "(0.00 is identical codon use): {:.2f}".format(difference)
+            "Final codon-use difference between host and current sequence: {:.2f}".format(
+                difference
+            )
         )
 
         out_seqs.append(best_dna.format("fasta"))

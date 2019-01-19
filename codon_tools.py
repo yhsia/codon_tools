@@ -103,7 +103,7 @@ def main(argv):
     out_seqs = []
 
     # generate host profile
-    codon_use_table, host_profile, codoon_relative_adativeness = codon_use.host_codon_usage(
+    codon_use_table, host_profile, codon_relative_adativeness = codon_use.host_codon_usage(
         args.host, args.host_threshold
     )
 
@@ -175,7 +175,7 @@ def main(argv):
 
             # if the codon adaptation index is better than what we've
             # seen so far, store this sequence
-            cai = codoon_relative_adativeness.cai_for_gene(str(dna))
+            cai = codon_relative_adativeness.cai_for_gene(str(dna))
             if cai > best_cai:
                 best_cai = cai
                 best_dna = SeqRecord(

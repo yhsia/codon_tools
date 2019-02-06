@@ -14,8 +14,8 @@ def count_codons(dna_sequence):
             the DNA sequence.
 
     Returns:
-        dict({str: int}): A dictionary with codons as keys and the
-            corresponding number of occurences as values.
+        dict{str, int}: A dictionary with codons as keys and the
+        corresponding number of occurences as values.
     """
     logger.info("Counting codons used in sequence")
 
@@ -32,12 +32,12 @@ def calc_profile(codons_count):
     input dictionary of counts.
 
     Args:
-        codons_count (dict({str: int})): A dictionary with codons as keys
+        codons_count (dict{str, int}): A dictionary with codons as keys
             and the corresponding number of occurences as values.
 
     Returns:
-        dict({str: int}): A dictionary with codons as keys and the
-            corresponding frequency of occurences as values.
+        dict{str, int}: A dictionary with codons as keys and the
+        corresponding frequency of occurences as values.
     """
     logger.info("Calculating codon use profile")
     codons_freq = CodonUsage.CodonsDict.copy()
@@ -66,12 +66,12 @@ def calc_codon_relative_adaptiveness(codons_count):
         Li (Nucleic Acids Res. 1987 Feb 11;15(3):1281-95).
 
     Args:
-        codons_count (dict({str: int})): A dictionary with codons as keys
+        codons_count (dict{str, int}): A dictionary with codons as keys
             and the corresponding number of occurences as values.
 
     Returns:
         Bio.SeqUtils.CodonUsage.CodonAdaptationIndex: A CodonAdaptationIndex
-            instance configured to calculate CAI for a target gene.
+        instance configured to calculate CAI for a target gene.
     """
     logger.info("Calculating relative adaptiveness of codon use")
     codons_rel_adapt = CodonUsage.CodonsDict.copy()
@@ -136,8 +136,8 @@ def process_host_table(host, threshold):
         threshold (float): Lowest fraction of codon usage to keep.
 
     Returns:
-        dict({str: int}): A dictionary with codons as keys and the
-            corresponding frequency of occurences as values.
+        dict{str, int}: A dictionary with codons as keys and the
+        corresponding frequency of occurences as values.
     """
     table = _load_host_table(host)
 
@@ -179,15 +179,17 @@ def host_codon_usage(host, threshold=0.10):
             Defaults to 0.10.
 
     Returns:
-        dict({str : list[list, list]}): A dictionary with each amino acid
-            three-letter code as keys, and a list of two lists as values.
-            The first list is the synonymous codons that encode the amino
-            acid, the second is the frequency with which each synonymous
-            codon is used.
-        dict({str: int}): A dictionary with codons as keys and the
-            corresponding frequency of occurences as values.
-        Bio.SeqUtils.CodonUsage.CodonAdaptationIndex: A `CodonAdaptationIndex`
-            instance configured to calculate CAI for a target gene.
+        dict{str, list[list, list]}, dict{str, int}, Bio.SeqUtils.CodonUsage.CodonAdaptationIndex:
+        A dictionary with each amino acid three-letter code as keys, and a
+        list of two lists as values. The first list is the synonymous codons
+        that encode the amino acid, the second is the frequency with which
+        each synonymous codon is used.
+
+        A dictionary with codons as keys and the corresponding frequency of
+        occurences as values.
+
+        A `CodonAdaptationIndex` instance configured to calculate CAI for a
+        target gene.
     """
     host_profile = process_host_table(host, threshold)
     cra = calc_codon_relative_adaptiveness(host_profile)

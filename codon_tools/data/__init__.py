@@ -13,14 +13,25 @@ def RestrictionEnzymes(restriction_enzymes):
 
     Returns:
         Bio.Restriction.Restriction.RestrictionBatch: RestrictionBatch instance
-            configured with the input restriction enzymes.
+        configured with the input restriction enzymes.
     """
     return Restriction.RestrictionBatch(
         [Restriction.AllEnzymes.get(enz) for enz in restriction_enzymes]
     )
 
 
-GCParams = namedtuple("GCParams", "name window_size low high")
+class GCParams(namedtuple("GCParams", "name window_size low high")):
+    """High and low values for GC-content within a specified window size.
+
+    Attributes:
+        name (str): Name of the parameter set.
+        window_size (int): Number of nucleotides over which the GC content
+            will be calculated.
+        low (float): The minimum fraction of GC in the window.
+        high (float): The maximum fraction of GC in the window.
+    """
+
+
 GC_content = [
     GCParams("IDT", 20, 0.15, 0.90),
     GCParams("twist", 50, 0.15, 0.80),

@@ -9,8 +9,8 @@ Codon Harmony
 .. image:: https://img.shields.io/travis/weitzner/codon_harmony.svg
         :target: https://travis-ci.org/weitzner/codon_harmony
 
-.. image:: https://readthedocs.org/projects/codon-tools/badge/?version=latest
-        :target: https://codon-tools.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/codon-harmony/badge/?version=latest
+        :target: https://codon-harmony.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
 

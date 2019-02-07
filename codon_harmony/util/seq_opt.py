@@ -19,7 +19,7 @@ def mutate_codon(codon_in, codon_use_table):
 
     Args:
         codon_in (Bio.Seq.Seq): A single codon.
-        codon_use_table (dict({str : list[list, list]})): A dictionary with
+        codon_use_table (dict{str, list[list, list]}): A dictionary with
             each amino acid three-letter code as keys, and a list of two
             lists as values. The first list is the synonymous codons that
             encode the amino acid, the second is the frequency with which
@@ -52,7 +52,7 @@ def resample_codons(dna_sequence, codon_use_table):
     Args:
         dna_sequence (Bio.Seq.Seq): A read-only representation of
             the DNA sequence.
-        codon_use_table (dict({str : list[list, list]})): A dictionary with
+        codon_use_table (dict{str, list[list, list]}): A dictionary with
             each amino acid three-letter code as keys, and a list of two
             lists as values. The first list is the synonymous codons that
             encode the amino acid, the second is the frequency with which
@@ -84,17 +84,18 @@ def compare_profiles(codons_count, host_profile, relax):
         from the host.
 
     Args:
-        codons_count (dict({str : int})): A dictionary with each codon as
+        codons_count (dict{str, int}): A dictionary with each codon as
             keys and the number of times it appears in a gene as values.
-        host_profile (dict({str : foat})): A dictionary with each codon as keys
+        host_profile (dict{str, foat}): A dictionary with each codon as keys
             and the frequency of its use in the host organism as values.
         relax (float): The maximum deviation from the host profile to tolerate.
 
     Returns:
-        dict({str : dict({str : int})}): A dictionary with
-            each codon as keys, and dictionaries of the difference between
-            the observed and expected codon usage.
-        float: The number of mutations per residue that are needed to make
+        dict{str, dict{str, int}}, float: A dictionary with each codon as keys,
+        and dictionaries of the difference between the observed and expected
+        codon usage.
+
+        The number of mutations per residue that are needed to make
         the sequence match the host codon usage.
     """
     logger.info("Comparing codon usage profiles")
@@ -176,7 +177,7 @@ def harmonize_codon_use_with_host(dna_sequence, mutation_profile):
     Args:
         dna_sequence (Bio.Seq.Seq): A read-only representation of
             the DNA sequence.
-        mutation_profile (dict({str : dict({str : int})})): A dictionary
+        mutation_profile (dict{str, dict{str, int}}): A dictionary
             with each codon as keys, and dictionaries of the difference
             between the observed and expected codon usage.
 
@@ -249,12 +250,12 @@ def resample_codons_and_enforce_host_profile(
     Args:
         dna_sequence (Bio.Seq.Seq): A read-only representation of
             the DNA sequence.
-        codon_use_table (dict({str : list[list, list]})): A dictionary with
+        codon_use_table (dict{str, list[list, list]}): A dictionary with
             each amino acid three-letter code as keys, and a list of two
             lists as values. The first list is the synonymous codons that
             encode the amino acid, the second is the frequency with which
             each synonymous codon is used.
-        host_profile (dict({str : foat})): A dictionary with each codon as keys
+        host_profile (dict{str, foat}): A dictionary with each codon as keys
             and the frequency of its use in the host organism as values.
         relax (float): The maximum deviation from the host profile to tolerate.
 
@@ -280,17 +281,19 @@ def gc_scan(dna_sequence, codon_use_table, gc):
         The following fields of the `GCParams` type are used in this
         function:
 
-        window_size (int): Size of sliding window (in nucelotides) to
-            examine for GC content. Window sizes can also be expressed as
-            factors of the length of `dna_sequence` by passing a string
-            that begins with "x" (e.g. "x0.5").
-        low (float): Minimum GC content in window.
-        high (float): Maximum GC content in window.
+        * **window_size** (`int`) – Size of sliding window (in nucelotides) to
+          examine for GC content. Window sizes can also be expressed as
+          factors of the length of `dna_sequence` by passing a string
+          that begins with "x" (e.g. "x0.5").
+
+        * **low** (`float`) – Minimum GC content in window.
+
+        * **high** (`float`) – Maximum GC content in window.
 
     Args:
         dna_sequence (Bio.Seq.Seq): A read-only representation of
             the DNA sequence.
-        codon_use_table (dict({str : list[list, list]})): A dictionary with
+        codon_use_table (dict{str, list[list, list]}): A dictionary with
             each amino acid three-letter code as keys, and a list of two
             lists as values. The first list is the synonymous codons that
             encode the amino acid, the second is the frequency with which
@@ -358,7 +361,7 @@ def remove_restriction_sites(dna_sequence, codon_use_table, restrict_sites):
     Args:
         dna_sequence (Bio.Seq.Seq): A read-only representation of
             the DNA sequence.
-        codon_use_table (dict({str : list[list, list]})): A dictionary with
+        codon_use_table (dict{str, list[list, list]}): A dictionary with
             each amino acid three-letter code as keys, and a list of two
             lists as values. The first list is the synonymous codons that
             encode the amino acid, the second is the frequency with which
@@ -408,12 +411,12 @@ def remove_start_sites(
     Args:
         dna_sequence (Bio.Seq.Seq): A read-only representation of
             the DNA sequence.
-        codon_use_table (dict({str : list[list, list]})): A dictionary with
+        codon_use_table (dict{str, list[list, list]}): A dictionary with
             each amino acid three-letter code as keys, and a list of two
             lists as values. The first list is the synonymous codons that
             encode the amino acid, the second is the frequency with which
             each synonymouscodon is used.
-        ribosome_binding_sites (dict({str : str})): A dictionary with named
+        ribosome_binding_sites (dict{str, str}): A dictionary with named
             ribosome binding sites as keys and the corresponding sequences
             as values.
         table_name (str, optional): Name of a registered NCBI table. See
@@ -493,7 +496,7 @@ def remove_repeating_sequences(dna_sequence, codon_use_table, window_size):
     Args:
         dna_sequence (Bio.Seq.Seq): A read-only representation of
             the DNA sequence.
-        codon_use_table (dict({str : list[list, list]})): A dictionary with
+        codon_use_table (dict{str, list[list, list]}): A dictionary with
             each amino acid three-letter code as keys, and a list of two
             lists as values. The first list is the synonymous codons that
             encode the amino acid, the second is the frequency with which
@@ -573,7 +576,7 @@ def remove_local_homopolymers(
     Args:
         dna_sequence (Bio.Seq.Seq): A read-only representation of
             the DNA sequence.
-        codon_use_table (dict({str : list[list, list]})): A dictionary with
+        codon_use_table (dict{str, list[list, list]}): A dictionary with
             each amino acid three-letter code as keys, and a list of two
             lists as values. The first list is the synonymous codons that
             encode the amino acid, the second is the frequency with which
@@ -627,7 +630,7 @@ def remove_hairpins(dna_sequence, codon_use_table, stem_length=10):
     Args:
         dna_sequence (Bio.Seq.Seq): A read-only representation of
             the DNA sequence.
-        codon_use_table (dict({str : list[list, list]})): A dictionary with
+        codon_use_table (dict{str, list[list, list]}): A dictionary with
             each amino acid three-letter code as keys, and a list of two
             lists as values. The first list is the synonymous codons that
             encode the amino acid, the second is the frequency with which

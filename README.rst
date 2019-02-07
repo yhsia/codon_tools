@@ -35,29 +35,6 @@ Species-specifc data can be found on the `Codon Usage Database`_ using the `NCBI
 * Documentation: https://codon-tools.readthedocs.io.
 
 
-Use
----
-
-.. code-block:: bash
-
-  python codon_harmony.py --input misc/INPUT_LIST.fasta --output out.fasta
-
-To get started, create a conda environment from the ``environment.yml`` file.
-
-.. code-block:: bash
-
-  conda env create -f environment.yml
-
-contents of ``misc/INPUT_LIST.fasta``:
-
-.. code-block:: text
-
-  >SEQ_1
-  ACDEFGHIKLMNPQRSTVWY
-  >SEQ_2
-  ACDEFGHIKLMNPQRSTVWY
-
-
 Features
 --------
 
@@ -88,11 +65,3 @@ To do
 
 .. _CONTRAfold: http://contra.stanford.edu/contrafold/
 .. _nupack: http://nupack.org
-
-Credits
--------
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage

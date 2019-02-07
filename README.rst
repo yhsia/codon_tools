@@ -27,7 +27,7 @@ Codon Harmony
 Amino acid reverse translation and DNA optimization tool based on species-specific codon-use distributions.
 Species-specifc data can be found on the `Codon Usage Database`_ using the `NCBI Taxonomy database`_ id (e.g. 413997) or the organism's Latin name (e.g. *Escherichia coli* B). Mapping species names to Taxonomy IDs can be done here_.
 
-.. _`Codon Usage Database`: http://www.kazusa.or.jp
+.. _`Codon Usage Database`: http://www.kazusa.or.jp/codon
 .. _`NCBI Taxonomy database`: http://www.ncbi.nlm.nih.gov/taxonomy
 .. _here: https://www.ncbi.nlm.nih.gov/Taxonomy/TaxIdentifier/tax_identifier.cgi
 

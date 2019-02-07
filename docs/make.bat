@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=codon_tools
+set SPHINXPROJ=codon_harmony
 
 if "%1" == "" goto help
 

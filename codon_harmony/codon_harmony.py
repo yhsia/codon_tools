@@ -8,8 +8,8 @@ from Bio.Alphabet import IUPAC
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqUtils import GC
 
-from codon_tools.util import codon_use, logging, log_levels, seq_opt
-from codon_tools.data import GC_content, RibosomeBindingSites, RestrictionEnzymes
+from .util import codon_use, logging, log_levels, seq_opt
+from .data import GC_content, RibosomeBindingSites, RestrictionEnzymes
 
 
 def get_args(argv=None):

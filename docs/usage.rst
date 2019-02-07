@@ -2,6 +2,6 @@
 Usage
 =====
 
-To use Codon Tools in a project::
+To use Codon Harmony in a project::
 
-    import codon_tools
+    import codon_harmony

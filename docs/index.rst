@@ -1,5 +1,5 @@
-Welcome to Codon Tools's documentation!
-=======================================
+Welcome to Codon Harmony's documentation!
+=========================================
 
 .. toctree::
    :maxdepth: 2

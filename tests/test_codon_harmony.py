@@ -7,8 +7,8 @@
 import unittest
 from click.testing import CliRunner
 
-from codon_tools import codon_tools
-from codon_tools import cli
+from codon_harmony import codon_harmony
+from codon_harmony import cli
 
 
 class TestCodon_tools(unittest.TestCase):
@@ -28,7 +28,7 @@ class TestCodon_tools(unittest.TestCase):
         runner = CliRunner()
         result = runner.invoke(cli.main)
         assert result.exit_code == 0
-        assert 'codon_tools.cli.main' in result.output
+        assert 'codon_harmony.cli.main' in result.output
         help_result = runner.invoke(cli.main, ['--help'])
         assert help_result.exit_code == 0
         assert '--help  Show this message and exit.' in help_result.output

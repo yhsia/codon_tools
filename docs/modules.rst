@@ -1,7 +1,7 @@
-codon_tools
-===========
+codon_harmony
+=============
 
 .. toctree::
    :maxdepth: 4
 
-   codon_tools
+   codon_harmony

@@ -1,4 +1,4 @@
-name: codon_tools
+name: codon_harmony
 dependencies:
   - biopython
   - ipykernel

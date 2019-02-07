@@ -1,21 +1,21 @@
-===========
-Codon Tools
-===========
+=============
+Codon Harmony
+=============
 
 
-.. image:: https://img.shields.io/pypi/v/codon_tools.svg
-        :target: https://pypi.python.org/pypi/codon_tools
+.. image:: https://img.shields.io/pypi/v/codon_harmony.svg
+        :target: https://pypi.python.org/pypi/codon_harmony
 
-.. image:: https://img.shields.io/travis/weitzner/codon_tools.svg
-        :target: https://travis-ci.org/weitzner/codon_tools
+.. image:: https://img.shields.io/travis/weitzner/codon_harmony.svg
+        :target: https://travis-ci.org/weitzner/codon_harmony
 
 .. image:: https://readthedocs.org/projects/codon-tools/badge/?version=latest
         :target: https://codon-tools.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
 
-.. image:: https://pyup.io/repos/github/weitzner/codon_tools/shield.svg
-     :target: https://pyup.io/repos/github/weitzner/codon_tools/
+.. image:: https://pyup.io/repos/github/weitzner/codon_harmony/shield.svg
+     :target: https://pyup.io/repos/github/weitzner/codon_harmony/
      :alt: Updates
 
 
@@ -36,7 +36,7 @@ Use
 
 .. code-block:: bash
 
-  python codon_tools.py --input misc/INPUT_LIST.fasta --output out.fasta
+  python codon_harmony.py --input misc/INPUT_LIST.fasta --output out.fasta
 
 To get started, create a conda environment from the ``environment.yml`` file.
 

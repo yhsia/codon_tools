@@ -42,26 +42,26 @@ Features
 2. Calculates the host's per-AA codon usage profile – codons used less than a specified threshold (defaults to 10%) are dropped.
 3. Compares the reverse-translated DNA sequence to the host profile, determines which codons are overused/underused.
 4. Stochastically mutates codons according to host profile.
-5. Processes DNA to remove unwanted features:
+5. Ranks sequences by codon adaptation index relative to host
+6. Processes DNA to remove unwanted features:
 
    * high GC content within a sliding window and across the entire sequence
    * unwanted restriction sites
    * alternate start positions (GA-rich regions 18 bp upstream of ATG/GTG/TTG)
    * 3-consecutive identical codons and 9-mer repeat chunks
    * areas with more than 4 (variable) consecutive identical bps ("local homopolymers")
-
+   * RNA hairpins, detected by looking for 10-mers with reverse complements (including wobble bases) in the sequence
+   
 The process is repeated from step 3 for a specified number of cycles (defaults to 1000) OR until the per-AA codon profile of current DNA and host profile matches (within tolerance).
 
-To do
------
+Future work
+-----------
 
-- [x] remove RNA structure from sequence
+- More advanced RNA-structure removal
 
   * CONTRAfold_ – overkill for now
   * nupack_ – overkill for now
-  * restrict structure to hairpins, detected by looking for 10-mers with reverse complements (including wobble bases) in the sequence
-- [ ] remove predicted splice sites
-- [x] store "best" sequence by codon adaptation index relative to host and return that to the user
+- Predicted splice site removal
 
 .. _CONTRAfold: http://contra.stanford.edu/contrafold/
 .. _nupack: http://nupack.org

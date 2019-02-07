@@ -12,7 +12,7 @@ from .util import codon_use, logging, log_levels, seq_opt
 from .data import GC_content, RibosomeBindingSites, RestrictionEnzymes
 
 
-def get_args(argv=None):
+def get_args():
     parser = argparse.ArgumentParser(
         description="Reverse translate your amino acid sequence harmoniously with "
         + "a host's condon usage.",
@@ -80,19 +80,16 @@ def get_args(argv=None):
         + "(e.g. --restriction_enzymes NdeI XhoI HpaI). ",
     )
 
-    return parser.parse_args(argv)
+    return parser.parse_args()
 
 
-def main(argv):
+def main():
     """Read in a fasta-formatted file containing amino acid sequences and
     reverse translate each of them in accordance with a specified host's
     codon usage frequency. The DNA sequence is then processed to remove
     unwanted features.
-
-    Args:
-        argv (list[str]): Command line arguments passed into the function.
     """
-    args = get_args(argv)
+    args = get_args()
     logging.basicConfig(level=log_levels[args.verbose])
     logger = logging.getLogger(__name__)
 
@@ -227,4 +224,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()

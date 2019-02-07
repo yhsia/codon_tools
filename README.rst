@@ -19,6 +19,10 @@ Codon Harmony
      :alt: Updates
 
 
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+     :target: https://github.com/ambv/black
+     :alt: Code style: black
+
 
 Amino acid reverse translation and DNA optimization tool based on species-specific codon-use distributions.
 Species-specifc data can be found on the `Codon Usage Database`_ using the `NCBI Taxonomy database`_ id (e.g. 413997) or the organism's Latin name (e.g. *Escherichia coli* B). Mapping species names to Taxonomy IDs can be done here_.
@@ -62,7 +66,7 @@ Features
 3. Compares the reverse-translated DNA sequence to the host profile, determines which codons are overused/underused.
 4. Stochastically mutates codons according to host profile.
 5. Processes DNA to remove unwanted features:
-  
+
    * high GC content within a sliding window and across the entire sequence
    * unwanted restriction sites
    * alternate start positions (GA-rich regions 18 bp upstream of ATG/GTG/TTG)
@@ -75,7 +79,7 @@ To do
 -----
 
 - [x] remove RNA structure from sequence
- 
+
   * CONTRAfold_ – overkill for now
   * nupack_ – overkill for now
   * restrict structure to hairpins, detected by looking for 10-mers with reverse complements (including wobble bases) in the sequence

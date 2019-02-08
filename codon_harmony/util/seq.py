@@ -33,7 +33,12 @@ def back_translate(self):
 
     # always use the first codon in the synonymous codons list for each AA
     return Seq(
-        "".join([CodonUsage.SynonymousCodons[seq3(AA).upper()][0] for AA in str(self)]),
+        "".join(
+            [
+                CodonUsage.SynonymousCodons[seq3(AA).upper()][0]
+                for AA in str(self).upper()
+            ]
+        ),
         IUPAC.unambiguous_dna,
     )
 

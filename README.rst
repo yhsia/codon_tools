@@ -32,7 +32,7 @@ Species-specifc data can be found on the `Codon Usage Database`_ using the `NCBI
 .. _here: https://www.ncbi.nlm.nih.gov/Taxonomy/TaxIdentifier/tax_identifier.cgi
 
 * Free software: MIT license
-* Documentation: https://codon-tools.readthedocs.io.
+* Documentation: https://codon-harmony.readthedocs.io.
 
 
 Features

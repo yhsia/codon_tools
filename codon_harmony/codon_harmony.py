@@ -12,11 +12,11 @@ from .util import codon_use, logging, log_levels, seq_opt
 from .data import GC_content, RibosomeBindingSites, RestrictionEnzymes
 
 
-def get_args():
+def get_parser():
     parser = argparse.ArgumentParser(
         description="Reverse translate your amino acid sequence harmoniously with "
         + "a host's condon usage.",
-        epilog="v0.9 (contact yhsia@uw.edu or bweitzner@lyellbio.com if you "
+        epilog="v0.9.2 (contact yhsia@uw.edu or bweitzner@lyellbio.com if you "
         + "encounter errors)",
     )
     parser.add_argument(
@@ -80,7 +80,7 @@ def get_args():
         + "(e.g. --restriction_enzymes NdeI XhoI HpaI). ",
     )
 
-    return parser.parse_args()
+    return parser
 
 
 def main():
@@ -89,7 +89,7 @@ def main():
     codon usage frequency. The DNA sequence is then processed to remove
     unwanted features.
     """
-    args = get_args()
+    args = get_parser().parse_args()
     logging.basicConfig(level=log_levels[args.verbose])
     logger = logging.getLogger(__name__)
 

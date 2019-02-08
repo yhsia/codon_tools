@@ -2,7 +2,13 @@
 Usage
 =====
 
-To execute Codon Harmony as a script::
+.. argparse::
+   :module: codon_harmony.codon_harmony
+   :func: get_parser
+   :prog: codon_harmony
+
+Executing Codon Harmony as a script
+-----------------------------------
 
     python codon_harmony/codon_harmony.py --input misc/INPUT_LIST.fasta --output out.fasta
 
@@ -19,6 +25,12 @@ contents of ``misc/INPUT_LIST.fasta``:
   >SEQ_2
   ACDEFGHIKLMNPQRSTVWY
 
-To use Codon Harmony in a project::
+Using Codon Harmony in a project
+--------------------------------
 
-    import codon_harmony
+.. code-block:: python
+
+  import codon_harmony
+  codon_harmony.runner()
+
+The ``runner`` function will handle parsing all command line arguments.

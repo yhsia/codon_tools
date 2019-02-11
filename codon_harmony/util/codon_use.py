@@ -1,7 +1,7 @@
 from Bio.SeqUtils import CodonUsage
 
 from . import Seq, logging
-from ..data.codon_use_by_host import codon_tables, latin_name_to_tax_id
+from ..data import codon_tables
 
 logger = logging.getLogger(__name__)
 
@@ -98,30 +98,10 @@ def calc_codon_relative_adaptiveness(codons_count):
 def _load_host_table(host):
     table = CodonUsage.CodonsDict.copy()
 
-    if host not in codon_tables and host in latin_name_to_tax_id:
-        latin_name = host
-        host = latin_name_to_tax_id[latin_name]
-    elif host in codon_tables:
-        latin_name = [k for k, v in latin_name_to_tax_id.items() if v == host].pop()
-
-    try:
-        raw_table = codon_tables[host]
-    except KeyError:
-        raise ValueError(
-            '"{}" is not a valid host id. '.format(host)
-            + "Currently supported hosts (Latin and NCBI taxonomy IDs) are {}".format(
-                host, ", ".join(latin_name_to_tax_id.keys() + codon_tables.keys())
-            )
-        )
-    else:
-        logger.info(
-            "Processing host table for {} (NCBI taxonomy ID {})".format(
-                latin_name, host
-            )
-        )
-        for codon, usage in raw_table.items():
-            # codons are stored with RNA alphabet
-            table[str(Seq(codon).back_transcribe())] = usage["count"]
+    raw_table = codon_tables(host)
+    for codon, frequency in raw_table.items():
+        # codons are stored with RNA alphabet
+        table[str(Seq(codon).back_transcribe())] = frequency
 
     return calc_profile(table)
 

@@ -11,13 +11,15 @@ Codon Harmony
 
 .. image:: https://readthedocs.org/projects/codon-harmony/badge/?version=latest
         :target: https://codon-harmony.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
+        :alt: Documentation status
 
+.. image:: https://codecov.io/gh/weitzner/codon_harmony/branch/master/graph/badge.svg
+        :target: https://codecov.io/gh/weitzner/codon_harmony
+        :alt: Coverage report
 
 .. image:: https://pyup.io/repos/github/weitzner/codon_harmony/shield.svg
      :target: https://pyup.io/repos/github/weitzner/codon_harmony/
      :alt: Updates
-
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
      :target: https://github.com/ambv/black

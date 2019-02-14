@@ -48,6 +48,8 @@ class TestCodon_tools_data(unittest.TestCase):
             taxid = chd._tax_id_from_species("Notta species")
         except ValueError as ve:
             assert ve.args[0].startswith('"Notta species" is not a valid host id.')
+        else:
+            assert False
 
     def test_001_codon_usage_from_id(self):
         """Test grabbing codon usage table from species or NCBI taxonomy id."""

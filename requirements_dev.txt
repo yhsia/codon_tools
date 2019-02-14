@@ -9,3 +9,5 @@ sphinx-argparse==0.2.5
 twine==1.12.1
 biopython==1.73
 python_codon_tables==0.1.6
+codecov==2.0.15
+coverage==4.5.2

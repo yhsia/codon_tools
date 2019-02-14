@@ -27,3 +27,10 @@ class TestCodon_harmony_util_seq(unittest.TestCase):
     def test_003_back_translate(self):
         """Test `codon_harmony.util.seq` -- unoptimized reverse translation"""
         assert self.test_aa.back_translate() == self.test_dna
+
+        try:
+            self.test_dna.back_translate()
+        except ValueError as ve:
+            assert ve.args[0] == "Nucleic acids cannot be back translated!"
+        else:
+            assert False

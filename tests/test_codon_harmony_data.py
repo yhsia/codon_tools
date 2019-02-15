@@ -58,6 +58,13 @@ class TestCodon_tools_data(unittest.TestCase):
         assert from_species == from_taxid
         assert from_taxid["UUU"] == 0.46
 
+        try:
+            chd.codon_tables(123456789101112)
+        except ValueError as ve:
+            assert ve.args[0].startswith('"123456789101112" is not a valid host id.')
+        else:
+            assert False
+
     def test_002_restriction_enzymes(self):
         """Test creating RestrictionEnzymesBatch from a list of restriction enzymes"""
         list_of_res_enz = ["XhoI", "HpaI", "PstI", "EcoRV", "NcoI", "BamHI"]

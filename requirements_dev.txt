@@ -1,14 +1,12 @@
-python>=3.6
 pip==19.0.1
 bumpversion==0.5.3
 wheel==0.32.3
 watchdog==0.9.0
 tox==3.7.0
-coverage==4.5.2
 Sphinx==1.8.4
 sphinx-argparse==0.2.5
 twine==1.12.1
+coverage==4.5.2
 codecov==2.0.15
-coverage==4.5.
 biopython==1.73
 python_codon_tables==0.1.6

@@ -21,16 +21,21 @@ setup(
     author="Brian D. Weitzner",
     author_email="bweitzner@lyellbio.com",
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
+        "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
     description="Amino acid reverse translation and DNA optimization tool based on species-specific codon-use distributions.",
-    entry_points={"console_scripts": ["codon_harmony=codon_harmony.cli:main"]},
+    entry_points={
+        "console_scripts": ["codon_harmony=codon_harmony.codon_harmony:main"]
+    },
     install_requires=requirements,
     license="MIT license",
     long_description=readme + "\n\n" + history,
@@ -41,6 +46,7 @@ setup(
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
+    python_requires=">=3.6",
     version="0.9.3",
     zip_safe=False,
 )

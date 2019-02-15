@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tests for `codon_tools.util.seq` module."""
+"""Tests for `codon_harmony.util.seq` module."""
 
 
 import unittest
@@ -24,7 +24,7 @@ class TestCodon_harmony_util_seq(unittest.TestCase):
     def tearDown(self):
         """Tear down test fixtures, if any."""
 
-    def test_003_back_translate(self):
+    def test_back_translate(self):
         """Test `codon_harmony.util.seq` -- unoptimized reverse translation"""
         assert self.test_aa.back_translate() == self.test_dna
 

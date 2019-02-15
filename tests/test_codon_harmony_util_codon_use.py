@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tests for `codon_tools.util.codon_use` module."""
+"""Tests for `codon_harmony.util.codon_use` module."""
 
 
 import unittest
-import codon_harmony.util.codon_use as cu
+from codon_harmony.util import codon_use
 
 
 class TestCodon_harmony_util_codon_use(unittest.TestCase):
@@ -25,28 +25,30 @@ class TestCodon_harmony_util_codon_use(unittest.TestCase):
     def tearDown(self):
         """Tear down test fixtures, if any."""
 
-    def test_004_codon_count(self):
+    def test_codon_count(self):
         """Test `codon_harmony.util.codon_use.codon_count`"""
 
-        cdn_count = cu.count_codons(self.test_dna)
+        cdn_count = codon_use.count_codons(self.test_dna)
         for codon, count in cdn_count.items():
             if codon in self.known_counts:
                 assert self.known_counts[codon] == count
             else:
                 assert not count
 
-    def test_005_calc_profile(self):
+    def test_calc_profile(self):
         """Test `codon_harmony.util.codon_use.calc_profile`"""
-        profile = cu.calc_profile(cu.count_codons(self.test_dna))
+        profile = codon_use.calc_profile(codon_use.count_codons(self.test_dna))
         for codon, frequency in profile.items():
             if codon in self.known_counts:
                 assert frequency == 1.0 and type(frequency) == float
             else:
                 assert frequency == 0
 
-    def test_006_calc_cra(self):
+    def test_calc_cra(self):
         """Test `codon_harmony.util.codon_use.calc_codon_relative_adaptiveness`"""
-        cai = cu.calc_codon_relative_adaptiveness(cu.count_codons(self.test_dna))
+        cai = codon_use.calc_codon_relative_adaptiveness(
+            codon_use.count_codons(self.test_dna)
+        )
         for codon, relative_adaptiveness in cai.index.items():
             if codon in self.known_counts:
                 assert (
@@ -56,9 +58,9 @@ class TestCodon_harmony_util_codon_use(unittest.TestCase):
             else:
                 assert relative_adaptiveness == 0
 
-    def test_007_load_host_table(self):
+    def test_load_host_table(self):
         """Test `codon_harmony.util.codon_use._load_host_table`"""
-        profile = cu._load_host_table(9606)
+        profile = codon_use._load_host_table(9606)
 
         human_profile = {
             "TTT": 0.46,
@@ -130,23 +132,25 @@ class TestCodon_harmony_util_codon_use(unittest.TestCase):
         for codon, frequency in profile.items():
             self.assertAlmostEqual(frequency, human_profile[codon], places=3)
 
-    def test_008_process_host_table(self):
+    def test_process_host_table(self):
         """Test `codon_harmony.util.codon_use.process_host_table`"""
-        raw_table = cu._load_host_table(9606)
-        processed_table = cu.process_host_table(9606, threshold=0.0)
+        raw_table = codon_use._load_host_table(9606)
+        processed_table = codon_use.process_host_table(9606, threshold=0.0)
         self.assertAlmostEqual(processed_table, raw_table)
 
         thresholds = [0.1, 0.2]
         for thresh in thresholds:
             rare_codons = [codon for codon, freq in raw_table.items() if freq < thresh]
-            processed_table = cu.process_host_table(9606, threshold=thresh)
+            processed_table = codon_use.process_host_table(9606, threshold=thresh)
             for codon in rare_codons:
                 assert not processed_table[codon]
 
-    def test_009_host_codon_usage(self):
+    def test_host_codon_usage(self):
         """Test `codon_harmony.util.codon_use.host_codon_usage`"""
-        processed_table = cu.process_host_table(9606, threshold=0.1)
-        codon_use_by_aa, host_profile, cra = cu.host_codon_usage(9606, threshold=0.1)
+        processed_table = codon_use.process_host_table(9606, threshold=0.1)
+        codon_use_by_aa, host_profile, cra = codon_use.host_codon_usage(
+            9606, threshold=0.1
+        )
         for AA, codon_freqs in codon_use_by_aa.items():
             self.assertAlmostEqual(sum(codon_freqs[-1]), 1.0)
 
@@ -154,15 +158,15 @@ class TestCodon_harmony_util_codon_use(unittest.TestCase):
                 assert host_profile[codon] == freq
         self.assertAlmostEqual(host_profile, processed_table)
         self.assertAlmostEqual(
-            cra.index, cu.calc_codon_relative_adaptiveness(host_profile).index
+            cra.index, codon_use.calc_codon_relative_adaptiveness(host_profile).index
         )
 
-    def test_010_process_host_table_w_logging(self):
+    def test_process_host_table_w_logging(self):
         """Test `codon_harmony.util.codon_use.process_host_table` with logging"""
         from codon_harmony.util import logging
 
         with self.assertLogs("codon_harmony.util.codon_use", level="DETAIL") as cm:
-            processed_table = cu.process_host_table(9606, threshold=0.0)
+            processed_table = codon_use.process_host_table(9606, threshold=0.0)
 
         assert (
             "DETAIL:codon_harmony.util.codon_use:Pre-threshold host table:" in cm.output

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tests for `codon_tools.util.logging` module."""
+"""Tests for `codon_harmony.util.logging` module."""
 
 
 import unittest
@@ -17,7 +17,7 @@ class TestCodon_harmony_util_logging(unittest.TestCase):
     def tearDown(self):
         """Tear down test fixtures, if any."""
 
-    def test_011_log_levels(self):
+    def test_log_levels(self):
         """Test `codon_harmony.util.logging`"""
         from codon_harmony.util import logging
 

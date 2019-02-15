@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tests for `codon_tools` package."""
+"""Tests for `codon_harmony` package."""
 
 
 import unittest

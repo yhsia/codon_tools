@@ -5,7 +5,6 @@
 
 
 import unittest
-
 import codon_harmony.util.codon_use as cu
 
 
@@ -157,3 +156,15 @@ class TestCodon_harmony_util_codon_use(unittest.TestCase):
         self.assertAlmostEqual(
             cra.index, cu.calc_codon_relative_adaptiveness(host_profile).index
         )
+
+    def test_010_process_host_table_w_logging(self):
+        """Test `codon_harmony.util.codon_use.process_host_table` with logging"""
+        from codon_harmony.util import logging
+
+        with self.assertLogs("codon_harmony.util.codon_use", level="DETAIL") as cm:
+            processed_table = cu.process_host_table(9606, threshold=0.0)
+
+        assert (
+            "DETAIL:codon_harmony.util.codon_use:Pre-threshold host table:" in cm.output
+        )
+        assert "DETAIL:codon_harmony.util.codon_use:TGT: 0.46" in cm.output

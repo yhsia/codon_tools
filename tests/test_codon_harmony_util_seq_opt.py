@@ -9,7 +9,7 @@ from codon_harmony.util import seq_opt
 
 
 class TestCodon_harmony_util_seq_opt(unittest.TestCase):
-    """Tests for `codon_harmony.util.seq` module."""
+    """Tests for `codon_harmony.util.seq_opt` module."""
 
     def setUp(self):
         """Set up test fixtures, if any."""
@@ -31,7 +31,7 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
         """Tear down test fixtures, if any."""
 
     def test_mutate_codon(self):
-        """Test `codon_harmony.util.seq` -- unoptimized reverse translation"""
+        """Test `codon_harmony.util.seq_opt.mutate_codon`"""
         # Phe -- two codons
         codon_in = "TTT"
         codon_out = seq_opt.mutate_codon(codon_in, self.codon_use_table)

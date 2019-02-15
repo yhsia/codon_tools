@@ -5,7 +5,6 @@
 
 
 import unittest
-import codon_harmony
 import codon_harmony.util.codon_use as cu
 
 

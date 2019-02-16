@@ -82,7 +82,6 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
 
     def test_harmonize_codon_use_with_host(self):
         """Test `codon_harmony.util.seq_opt.harmonize_codon_use_with_host`"""
-        # dna_sequence, mutation_profile
         mutation_profile, _ = seq_opt.compare_profiles(
             self.codons_count, self.host_profile, 1.0
         )
@@ -102,13 +101,39 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
 
     def test_resample_codons_and_enforce_host_profile(self):
         """Test `codon_harmony.util.seq_opt.resample_codons_and_enforce_host_profile`"""
-        # dna_sequence, codon_use_table, host_profile, relax
-        pass
+        test_dna_local = seq_opt.resample_codons_and_enforce_host_profile(
+            self.test_dna, self.codon_use_table, self.host_profile, 1.0
+        )
+        assert test_dna_local.translate() == self.test_aa
 
     def test_gc_scan(self):
         """Test `codon_harmony.util.seq_opt.gc_scan`"""
-        # dna_sequence, codon_use_table, gc
-        pass
+        from codon_harmony.data import GCParams
+
+        def _check_gc(gc):
+            from Bio.SeqUtils import GC
+
+            test_dna_local = seq_opt.gc_scan(self.test_dna, self.codon_use_table, gc)
+            codon_window = gc.window_size // 3
+            for i in range(0, len(test_dna_local) // 3):
+                window = slice(
+                    i * 3,
+                    (i + codon_window) * 3
+                    if (i + codon_window) * 3 < len(test_dna_local)
+                    else len(test_dna_local),
+                )
+                gc_percent = GC(test_dna_local[window]) / 100
+                assert gc_percent >= gc.low and gc_percent <= gc.high
+
+            return test_dna_local
+
+        gc1 = GCParams(name="test1", window_size=6, low=0.1, high=0.8)
+        dna_should_be_the_same = _check_gc(gc1)
+        assert dna_should_be_the_same == self.test_dna
+
+        gc2 = GCParams(name="test2", window_size=6, low=0.1, high=0.5)
+        dna_should_be_different = _check_gc(gc2)
+        assert dna_should_be_different != self.test_dna
 
     def test_remove_restriction_sites(self):
         """Test `codon_harmony.util.seq_opt.remove_restriction_sites`"""

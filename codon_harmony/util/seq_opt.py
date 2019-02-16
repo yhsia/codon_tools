@@ -266,7 +266,7 @@ def resample_codons_and_enforce_host_profile(
     dna_sequence = resample_codons(dna_sequence, codon_use_table)
 
     # measure the deviation from the host profile and adjust accordingly
-    mutation_table, difference = compare_profiles(
+    mutation_table, _ = compare_profiles(
         codon_use.count_codons(dna_sequence), host_profile, relax
     )
 
@@ -317,11 +317,10 @@ def gc_scan(dna_sequence, codon_use_table, gc):
 
     # iterate across overlapping chunks of complete codons
     codon_window = window_size // 3 + 1
-    overlap = codon_window // 2
     mutable_seq = dna_sequence.tomutable()
 
     # iterate by codon, but map back to sequence-based indices
-    for i in range(0, len(mutable_seq) // 3, (codon_window - overlap) * 3):
+    for i in range(len(mutable_seq) // 3):
         window = slice(
             i * 3,
             (i + codon_window) * 3
@@ -523,7 +522,6 @@ def remove_repeating_sequences(dna_sequence, codon_use_table, window_size):
 
     # iterate across overlapping chunks of complete codons
     codon_window = window_size // 3
-    overlap = codon_window - 1
     mutable_seq = dna_sequence.tomutable()
 
     current_cycle = 0  # prevent infinite loops (caused by poly-TRP or poly-MET)
@@ -535,7 +533,7 @@ def remove_repeating_sequences(dna_sequence, codon_use_table, window_size):
         keep_looping = False
 
         # iterate by codon, but map back to sequence-based indices
-        for i in range(0, len(mutable_seq) // 3, (codon_window - overlap) * 3):
+        for i in range(len(mutable_seq) // 3):
             window = slice(
                 i * 3,
                 (i + codon_window) * 3

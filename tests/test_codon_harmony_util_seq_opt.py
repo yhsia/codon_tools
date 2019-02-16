@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tests for `codon_harmony.util.seq` module."""
+"""Tests for `codon_harmony.util.seq_opt` module."""
 
 
 import unittest
@@ -26,6 +26,7 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
         self.codon_use_table, self.host_profile, _ = codon_use.host_codon_usage(
             9606, 0.0
         )
+        self.codons_count = codon_use.count_codons(self.test_dna)
 
     def tearDown(self):
         """Tear down test fixtures, if any."""
@@ -46,3 +47,90 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
         codon_in = "ATG"
         codon_out = seq_opt.mutate_codon(codon_in, self.codon_use_table)
         assert codon_out == codon_in
+
+    def test_resample_codons(self):
+        """Test `codon_harmony.util.seq_opt.resample_codons`"""
+        test_dna_local = seq_opt.resample_codons(self.test_dna, self.codon_use_table)
+        assert test_dna_local.translate() == self.test_dna.translate()
+        assert test_dna_local.translate() == self.test_aa
+
+    def test_compare_profiles(self):
+        """Test `codon_harmony.util.seq_opt.compare_profiles`"""
+        known_counts = {"ACC": 6, "GAG": 3, "TCT": 3}
+        table, diff = seq_opt.compare_profiles(
+            self.codons_count, self.host_profile, 1.0
+        )
+        self.assertAlmostEqual(diff, 0.5769, places=4)
+
+        for codon, count_dict in table.items():
+            if codon in known_counts:
+                assert count_dict["input_count"] == known_counts[codon]
+            else:
+                assert not count_dict["input_count"]
+            assert (
+                count_dict["ideal_usage_abs"] + count_dict["difference_abs"]
+                == count_dict["input_count"]
+            )
+
+        relevant_codons = {
+            "thr": ["ACC", "ACT", "ACG", "ACA"],
+            "glu": ["GAA", "GAG"],
+            "ser": ["TCA", "TCC", "TCG", "TCT", "AGT", "AGC"],
+        }
+        for _, codons in relevant_codons.items():
+            assert not sum(table[codon]["difference"] for codon in codons)
+
+    def test_harmonize_codon_use_with_host(self):
+        """Test `codon_harmony.util.seq_opt.harmonize_codon_use_with_host`"""
+        # dna_sequence, mutation_profile
+        mutation_profile, _ = seq_opt.compare_profiles(
+            self.codons_count, self.host_profile, 1.0
+        )
+        test_dna_local = seq_opt.harmonize_codon_use_with_host(
+            self.test_dna, mutation_profile
+        )
+        test_dna_local = str(test_dna_local)
+        computed_counts = {}
+        for i in range(len(test_dna_local) // 3):
+            codon = test_dna_local[3 * i : 3 * (i + 1)]
+            if codon not in computed_counts:
+                computed_counts[codon] = 0
+            computed_counts[codon] += 1
+
+        for codon, count in computed_counts.items():
+            assert mutation_profile[codon]["ideal_usage_abs"] == count
+
+    def test_resample_codons_and_enforce_host_profile(self):
+        """Test `codon_harmony.util.seq_opt.resample_codons_and_enforce_host_profile`"""
+        # dna_sequence, codon_use_table, host_profile, relax
+        pass
+
+    def test_gc_scan(self):
+        """Test `codon_harmony.util.seq_opt.gc_scan`"""
+        # dna_sequence, codon_use_table, gc
+        pass
+
+    def test_remove_restriction_sites(self):
+        """Test `codon_harmony.util.seq_opt.remove_restriction_sites`"""
+        # dna_sequence, codon_use_table, restrict_sites
+        pass
+
+    def test_remove_start_sites(self):
+        """Test `codon_harmony.util.seq_opt.remove_start_sites`"""
+        # dna_sequence, codon_use_table, ribosome_binding_sites, table_name="Standard"
+        pass
+
+    def test_remove_repeating_sequences(self):
+        """Test `codon_harmony.util.seq_opt.remove_repeating_sequences`"""
+        # dna_sequence, codon_use_table, window_size
+        pass
+
+    def test_remove_local_homopolymers(self):
+        """Test `codon_harmony.util.seq_opt.remove_local_homopolymers`"""
+        # dna_sequence, codon_use_table, n_codons=2, homopolymer_threshold=4
+        pass
+
+    def test_remove_hairpins(self):
+        """Test `codon_harmony.util.seq_opt.remove_hairpins`"""
+        # dna_sequence, codon_use_table, stem_length=10
+        pass

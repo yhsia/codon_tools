@@ -106,7 +106,7 @@ def compare_profiles(codons_count, host_profile, relax):
         temp_table = {}
 
         # calculate total usage of codon in input
-        tot_usage = sum([codons_count[codon] for codon in synonymous_codons])
+        tot_usage = int(sum([codons_count[codon] for codon in synonymous_codons]))
 
         # calculate ideal usage of codon in host
         tot_ideal = 0

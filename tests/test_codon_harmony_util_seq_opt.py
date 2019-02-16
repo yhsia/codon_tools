@@ -73,10 +73,21 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
             )
 
         relevant_codons = {
-            "thr": ["ACC", "ACT", "ACG", "ACA"],
-            "glu": ["GAA", "GAG"],
-            "ser": ["TCA", "TCC", "TCG", "TCT", "AGT", "AGC"],
+            "Thr": ["ACC", "ACT", "ACG", "ACA"],
+            "Glu": ["GAA", "GAG"],
+            "Ser": ["TCA", "TCC", "TCG", "TCT", "AGT", "AGC"],
         }
+        for _, codons in relevant_codons.items():
+            assert not sum(table[codon]["difference"] for codon in codons)
+
+        # modify the count to trigger a different code path
+        codon_count_local = self.codons_count.copy()
+        codon_count_local["ACG"] += 1
+        codon_count_local["ACC"] -= 2
+        table, diff = seq_opt.compare_profiles(
+            codon_count_local, self.host_profile, 0.9
+        )
+        self.assertAlmostEqual(diff, 0.4545, places=4)
         for _, codons in relevant_codons.items():
             assert not sum(table[codon]["difference"] for codon in codons)
 

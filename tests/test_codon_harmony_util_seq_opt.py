@@ -114,7 +114,12 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
             from Bio.SeqUtils import GC
 
             test_dna_local = seq_opt.gc_scan(self.test_dna, self.codon_use_table, gc)
-            codon_window = gc.window_size // 3
+            try:
+                codon_window = gc.window_size // 3
+            except TypeError:
+                # this is triggered for gc3 -- "x0.5" -> (0.5 * len(dna)) // 3
+                codon_window = int(float(gc.window_size[1:]) * len(test_dna_local)) // 3
+
             for i in range(0, len(test_dna_local) // 3):
                 window = slice(
                     i * 3,
@@ -133,6 +138,10 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
 
         gc2 = GCParams(name="test2", window_size=6, low=0.1, high=0.5)
         dna_should_be_different = _check_gc(gc2)
+        assert dna_should_be_different != self.test_dna
+
+        gc3 = GCParams(name="test3", window_size="x0.5", low=0.1, high=0.5)
+        dna_should_be_different = _check_gc(gc3)
         assert dna_should_be_different != self.test_dna
 
     def test_remove_restriction_sites(self):

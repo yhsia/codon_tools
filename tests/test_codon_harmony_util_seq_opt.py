@@ -7,15 +7,15 @@
 import unittest
 from codon_harmony.util import seq_opt
 
+from Bio.Seq import Seq
+from Bio.Alphabet import IUPAC
+
 
 class TestCodon_harmony_util_seq_opt(unittest.TestCase):
     """Tests for `codon_harmony.util.seq_opt` module."""
 
     def setUp(self):
         """Set up test fixtures, if any."""
-        from Bio.Seq import Seq
-        from Bio.Alphabet import IUPAC
-
         self.test_aa = Seq("TESTTESTTEST", IUPAC.protein)
         self.test_dna = Seq(
             "ACCGAGTCTACCACCGAGTCTACCACCGAGTCTACC", IUPAC.unambiguous_dna
@@ -157,19 +157,16 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
 
     def test_remove_restriction_sites(self):
         """Test `codon_harmony.util.seq_opt.remove_restriction_sites`"""
-        # dna_sequence, codon_use_table, restrict_sites
-        from Bio.Seq import Seq
-        from Bio.Alphabet import IUPAC
         from Bio import Restriction
 
         def _look_for_site(site, re_name, should_match=False):
             dna = Seq(site + str(self.test_dna), IUPAC.unambiguous_dna)
-            clean_dna = seq_opt.remove_restriction_sites(
+            proc_dna = seq_opt.remove_restriction_sites(
                 dna,
                 self.codon_use_table,
                 Restriction.RestrictionBatch([Restriction.AllEnzymes.get(re_name)]),
             )
-            assert (dna == clean_dna) == should_match
+            assert (dna == proc_dna) == should_match
 
         # self.test_dna has the site for neither NdeI nor XhoI
         # prepend the site, confirm that it is replaced.
@@ -180,8 +177,18 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
 
     def test_remove_start_sites(self):
         """Test `codon_harmony.util.seq_opt.remove_start_sites`"""
-        # dna_sequence, codon_use_table, ribosome_binding_sites, table_name="Standard"
-        pass
+        from codon_harmony.data import RibosomeBindingSites
+
+        start = "TTG"
+        dna = Seq(
+            "CATATGGGGGGCTCGAGA" + start + str(self.test_dna), IUPAC.unambiguous_dna
+        )
+        rbs = {"test": "GGGGG"}
+        proc_dna = seq_opt.remove_start_sites(
+            dna, self.codon_use_table, rbs, table_name="Standard"
+        )
+        assert dna[5:10] == rbs["test"]
+        assert proc_dna[5:10] != rbs["test"]
 
     def test_remove_repeating_sequences(self):
         """Test `codon_harmony.util.seq_opt.remove_repeating_sequences`"""

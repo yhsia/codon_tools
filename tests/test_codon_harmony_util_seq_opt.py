@@ -158,7 +158,25 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
     def test_remove_restriction_sites(self):
         """Test `codon_harmony.util.seq_opt.remove_restriction_sites`"""
         # dna_sequence, codon_use_table, restrict_sites
-        pass
+        from Bio.Seq import Seq
+        from Bio.Alphabet import IUPAC
+        from Bio import Restriction
+
+        def _look_for_site(site, re_name, should_match=False):
+            dna = Seq(site + str(self.test_dna), IUPAC.unambiguous_dna)
+            clean_dna = seq_opt.remove_restriction_sites(
+                dna,
+                self.codon_use_table,
+                Restriction.RestrictionBatch([Restriction.AllEnzymes.get(re_name)]),
+            )
+            assert (dna == clean_dna) == should_match
+
+        # self.test_dna has the site for neither NdeI nor XhoI
+        # prepend the site, confirm that it is replaced.
+        _look_for_site("CATATG", "NdeI")
+        _look_for_site("CTCGAG", "XhoI")
+        # prepend the NdeI site, search against XhoI -- dna should be unchanged
+        _look_for_site("CATATG", "XhoI", should_match=True)
 
     def test_remove_start_sites(self):
         """Test `codon_harmony.util.seq_opt.remove_start_sites`"""

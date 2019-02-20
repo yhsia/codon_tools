@@ -199,8 +199,16 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
 
     def test_remove_repeating_sequences(self):
         """Test `codon_harmony.util.seq_opt.remove_repeating_sequences`"""
-        # dna_sequence, codon_use_table, window_size
-        pass
+        # test_dna contains repeats -- should be flagged here
+        proc_dna = seq_opt.remove_repeating_sequences(
+            self.test_dna, self.codon_use_table, 9
+        )
+        assert proc_dna != self.test_dna
+
+        # test for three consecutive identical codons
+        test_dna = Seq("TTGTTGTTG", IUPAC.unambiguous_dna)
+        proc_dna = seq_opt.remove_repeating_sequences(test_dna, self.codon_use_table, 9)
+        assert proc_dna != test_dna
 
     def test_remove_local_homopolymers(self):
         """Test `codon_harmony.util.seq_opt.remove_local_homopolymers`"""

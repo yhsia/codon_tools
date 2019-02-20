@@ -199,7 +199,9 @@ def main(argv=None):
         logger.output("Final overall GC content is {:.0%}".format(gc_frac))
         if gc_frac < 0.3 or gc_frac > 0.65:
             logger.warning(
-                "The sequence's GC content ({:.2f}) is beyond normal ranges (0.3 > GC < 0.65)!"
+                "The sequence's GC content ({:.2f}) is beyond normal ranges (0.3 > GC < 0.65)!".format(
+                    gc_frac
+                )
             )
 
         # measure the final deviation from the host profile

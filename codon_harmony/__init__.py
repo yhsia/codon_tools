@@ -5,4 +5,4 @@ from .codon_harmony import main as runner
 
 __author__ = """Brian D. Weitzner, Yang Hsia"""
 __email__ = "bweitzner@lyellbio.com"
-__version__ = "0.9.4"
+__version__ = "0.9.5-dev0"

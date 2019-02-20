@@ -47,6 +47,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     python_requires=">=3.6",
-    version="0.9.4",
+    version="0.9.5-dev0",
     zip_safe=False,
 )

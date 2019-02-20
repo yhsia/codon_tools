@@ -187,8 +187,15 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
         proc_dna = seq_opt.remove_start_sites(
             dna, self.codon_use_table, rbs, table_name="Standard"
         )
+
+        assert dna != proc_dna
         assert dna[5:10] == rbs["test"]
         assert proc_dna[5:10] != rbs["test"]
+
+        proc_dna = seq_opt.remove_start_sites(
+            self.test_dna, self.codon_use_table, rbs, table_name="Standard"
+        )
+        assert proc_dna == self.test_dna
 
     def test_remove_repeating_sequences(self):
         """Test `codon_harmony.util.seq_opt.remove_repeating_sequences`"""

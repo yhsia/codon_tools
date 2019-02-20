@@ -221,7 +221,3 @@ def main(argv=None):
     # write sequences to file
     with open(args.output, "w") as f:
         f.write("".join(out_seqs))
-
-
-if __name__ == "__main__":
-    main()

@@ -53,11 +53,9 @@ class TestCodon_tools(unittest.TestCase):
         # more of an integration test than a unit test with
         # each unit being separately tested.
 
-        # test two sequences -- one that can be optimized and one that
-        # cannot given max_relax = 0.1
+        # test three sequences:
+        #   one that can be optimized
+        #   one that cannot be optimized (given max_relax = 0.1)
+        #   one that triggers a warning about GC content
         codon_harmony.main(self.args_to_parse)
-        # ensure the bad GC sequence is accepted by increasing max_relax
-        codon_harmony.main(
-            "--input misc/BAD_GC.fasta --output out.fasta --max_relax 0.2".split()
-        )
         assert True

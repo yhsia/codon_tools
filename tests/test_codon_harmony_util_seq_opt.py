@@ -212,8 +212,17 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
 
     def test_remove_local_homopolymers(self):
         """Test `codon_harmony.util.seq_opt.remove_local_homopolymers`"""
-        # dna_sequence, codon_use_table, n_codons=2, homopolymer_threshold=4
-        pass
+        proc_dna = seq_opt.remove_local_homopolymers(
+            self.test_dna, self.codon_use_table, n_codons=2, homopolymer_threshold=4
+        )
+        assert proc_dna == self.test_dna
+
+        # add a short stretch with >4 repeated NTs -- should be flagged
+        test_dna = Seq("GTTTTT" + str(self.test_dna), IUPAC.unambiguous_dna)
+        proc_dna = seq_opt.remove_local_homopolymers(
+            test_dna, self.codon_use_table, n_codons=2, homopolymer_threshold=4
+        )
+        assert proc_dna != test_dna
 
     def test_remove_hairpins(self):
         """Test `codon_harmony.util.seq_opt.remove_hairpins`"""

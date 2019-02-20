@@ -83,13 +83,13 @@ def get_parser():
     return parser
 
 
-def main():
+def main(argv=None):
     """Read in a fasta-formatted file containing amino acid sequences and
     reverse translate each of them in accordance with a specified host's
     codon usage frequency. The DNA sequence is then processed to remove
     unwanted features.
     """
-    args = get_parser().parse_args()
+    args = get_parser().parse_args(argv)
     logging.basicConfig(level=log_levels[args.verbose])
     logger = logging.getLogger(__name__)
 

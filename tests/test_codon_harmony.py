@@ -14,18 +14,16 @@ class TestCodon_tools(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures, if any."""
+        self.args_to_parse = ["--input", "misc/TEST.fasta", "--output", "out.fasta"]
 
     def tearDown(self):
         """Tear down test fixtures, if any."""
 
     def test_args(self):
         """Test args parsing."""
-        args_to_parse = ["--input", "dummy.fasta", "--output", "out.fasta"]
         parser = codon_harmony.get_parser()
-        parsed_args = parser.parse_args(args_to_parse)
-        print()
-        print(parsed_args)
-        assert parsed_args.input == "dummy.fasta"
+        parsed_args = parser.parse_args(self.args_to_parse)
+        assert parsed_args.input == "misc/TEST.fasta"
         assert parsed_args.output == "out.fasta"
         assert parsed_args.cycles == 100
         assert parsed_args.host == "413997"
@@ -43,3 +41,11 @@ class TestCodon_tools(unittest.TestCase):
             "BamHI",
         ]
         assert parsed_args.verbose == 0
+
+    def test_main(self):
+        """Test `codon_harmony` main function"""
+        # all this does is make sure that nothing crashes --
+        # more of an integration test than a unit test with
+        # each unit being separately tested.
+        codon_harmony.main(self.args_to_parse)
+        assert True

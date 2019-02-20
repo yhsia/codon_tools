@@ -225,7 +225,7 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
 
         stem_seq = Seq("CATATGGGGGGCTCGAGA", IUPAC.unambiguous_dna)
         test_dna = Seq(
-            str(stem_seq) + "TTGTTGTTG" + str(stem_seq.reverse_complement()),
+            str(stem_seq) + "TTGTTGTTGA" + str(stem_seq.reverse_complement()),
             IUPAC.unambiguous_dna,
         )
         proc_dna = seq_opt.remove_hairpins(test_dna, self.codon_use_table)

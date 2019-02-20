@@ -14,7 +14,12 @@ class TestCodon_tools(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures, if any."""
-        self.args_to_parse = ["--input", "misc/TEST.fasta", "--output", "out.fasta"]
+        self.args_to_parse = [
+            "--input",
+            "misc/INPUT_LIST.fasta",
+            "--output",
+            "out.fasta",
+        ]
 
     def tearDown(self):
         """Tear down test fixtures, if any."""
@@ -23,7 +28,7 @@ class TestCodon_tools(unittest.TestCase):
         """Test args parsing."""
         parser = codon_harmony.get_parser()
         parsed_args = parser.parse_args(self.args_to_parse)
-        assert parsed_args.input == "misc/TEST.fasta"
+        assert parsed_args.input == "misc/INPUT_LIST.fasta"
         assert parsed_args.output == "out.fasta"
         assert parsed_args.cycles == 100
         assert parsed_args.host == "413997"

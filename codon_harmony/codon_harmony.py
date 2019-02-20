@@ -83,13 +83,13 @@ def get_parser():
     return parser
 
 
-def main():
+def main(argv=None):
     """Read in a fasta-formatted file containing amino acid sequences and
     reverse translate each of them in accordance with a specified host's
     codon usage frequency. The DNA sequence is then processed to remove
     unwanted features.
     """
-    args = get_parser().parse_args()
+    args = get_parser().parse_args(argv)
     logging.basicConfig(level=log_levels[args.verbose])
     logger = logging.getLogger(__name__)
 
@@ -199,7 +199,9 @@ def main():
         logger.output("Final overall GC content is {:.0%}".format(gc_frac))
         if gc_frac < 0.3 or gc_frac > 0.65:
             logger.warning(
-                "The sequence's GC content ({:.2f}) is beyond normal ranges (0.3 > GC < 0.65)!"
+                "The sequence's GC content ({:.2f}) is beyond normal ranges (0.3 > GC < 0.65)!".format(
+                    gc_frac
+                )
             )
 
         # measure the final deviation from the host profile
@@ -221,7 +223,3 @@ def main():
     # write sequences to file
     with open(args.output, "w") as f:
         f.write("".join(out_seqs))
-
-
-if __name__ == "__main__":
-    main()

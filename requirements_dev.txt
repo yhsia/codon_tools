@@ -5,7 +5,7 @@ watchdog==0.9.0
 tox==3.7.0
 Sphinx==1.8.4
 sphinx-argparse==0.2.5
-twine==1.12.1
+twine==1.13.0
 coverage==4.5.2
 codecov==2.0.15
 biopython==1.73

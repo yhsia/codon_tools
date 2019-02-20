@@ -6,3 +6,10 @@ History
 ------------------
 
 * First release on PyPI.
+
+
+0.9.4 (2019-02-20)
+------------------
+
+* Full suite of tests added, bugs uncovered and fixed
+* Adjustments to the packaging setup -- actaully installable now

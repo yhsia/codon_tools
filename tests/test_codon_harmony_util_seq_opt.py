@@ -184,17 +184,13 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
             "CATATGGGGGGCTCGAGA" + start + str(self.test_dna), IUPAC.unambiguous_dna
         )
         rbs = {"test": "GGGGG"}
-        proc_dna = seq_opt.remove_start_sites(
-            dna, self.codon_use_table, rbs, table_name="Standard"
-        )
+        proc_dna = seq_opt.remove_start_sites(dna, self.codon_use_table, rbs)
 
         assert dna != proc_dna
         assert dna[5:10] == rbs["test"]
         assert proc_dna[5:10] != rbs["test"]
 
-        proc_dna = seq_opt.remove_start_sites(
-            self.test_dna, self.codon_use_table, rbs, table_name="Standard"
-        )
+        proc_dna = seq_opt.remove_start_sites(self.test_dna, self.codon_use_table, rbs)
         assert proc_dna == self.test_dna
 
     def test_remove_repeating_sequences(self):
@@ -213,18 +209,24 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
     def test_remove_local_homopolymers(self):
         """Test `codon_harmony.util.seq_opt.remove_local_homopolymers`"""
         proc_dna = seq_opt.remove_local_homopolymers(
-            self.test_dna, self.codon_use_table, n_codons=2, homopolymer_threshold=4
+            self.test_dna, self.codon_use_table
         )
         assert proc_dna == self.test_dna
 
         # add a short stretch with >4 repeated NTs -- should be flagged
         test_dna = Seq("GTTTTT" + str(self.test_dna), IUPAC.unambiguous_dna)
-        proc_dna = seq_opt.remove_local_homopolymers(
-            test_dna, self.codon_use_table, n_codons=2, homopolymer_threshold=4
-        )
+        proc_dna = seq_opt.remove_local_homopolymers(test_dna, self.codon_use_table)
         assert proc_dna != test_dna
 
     def test_remove_hairpins(self):
         """Test `codon_harmony.util.seq_opt.remove_hairpins`"""
-        # dna_sequence, codon_use_table, stem_length=10
-        pass
+        proc_dna = seq_opt.remove_hairpins(self.test_dna, self.codon_use_table)
+        assert proc_dna == self.test_dna
+
+        stem_seq = Seq("CATATGGGGGGCTCGAGA", IUPAC.unambiguous_dna)
+        test_dna = Seq(
+            str(stem_seq) + "TTGTTGTTG" + str(stem_seq.reverse_complement()),
+            IUPAC.unambiguous_dna,
+        )
+        proc_dna = seq_opt.remove_hairpins(test_dna, self.codon_use_table)
+        assert proc_dna != self.test_dna

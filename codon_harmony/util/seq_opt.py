@@ -2,6 +2,8 @@ import logging
 import random
 import re
 
+from itertools import product
+
 from Bio.Alphabet import IUPAC
 
 from Bio.Data import CodonTable
@@ -489,7 +491,7 @@ def remove_start_sites(
 
 
 def remove_repeating_sequences(dna_sequence, codon_use_table, window_size):
-    """Idenify and remove repeating sequences of codons or groups of
+    """Identify and remove repeating sequences of codons or groups of
     codons within a DNA sequence.
 
     Args:
@@ -659,5 +661,156 @@ def remove_hairpins(dna_sequence, codon_use_table, stem_length=10):
             mutable_seq[codon_idx] = mutate_codon(
                 mutable_seq[codon_idx], codon_use_table
             )
+
+    return mutable_seq.toseq()
+
+
+# consensus donor seq is "GGGTRAGT"
+# below is all possible versions with the first GT fixed, and at
+# least 2 other NTs from the consensus seq
+_splice_donors = [
+    re.compile(r"GGGT\w\w\w\w", re.UNICODE),
+    re.compile(r"G\wGT[AG]\w\w\w", re.UNICODE),
+    re.compile(r"G\wGT\wA\w\w", re.UNICODE),
+    re.compile(r"G\wGT\w\wG\w", re.UNICODE),
+    re.compile(r"G\wGT\w\w\wT", re.UNICODE),
+    re.compile(r"\wGGT[AG]\w\w\w", re.UNICODE),
+    re.compile(r"\wGGT\wA\w\w", re.UNICODE),
+    re.compile(r"\wGGT\w\wG\w", re.UNICODE),
+    re.compile(r"\wGGT\w\w\wT", re.UNICODE),
+    re.compile(r"\w\wGT[AG]A\w\w", re.UNICODE),
+    re.compile(r"\w\wGT[AG]\wG\w", re.UNICODE),
+    re.compile(r"\w\wGT[AG]\w\wT", re.UNICODE),
+    re.compile(r"\w\wGT\wAG\w", re.UNICODE),
+    re.compile(r"\w\wGT\wA\wT", re.UNICODE),
+    re.compile(r"\w\wGT\w\wGT", re.UNICODE),
+]
+
+# consensus branch seq is "YTRAC"
+# ignore branch points (for now) because they are small
+# and occur 20-50 NTs upstream of acceptor -- not specific enough
+
+# consensus acceptor seq is "YYYYYNCAGG"
+# below are all sequences ending in NCAGG, NNAGG and NCAGN
+# where at least 3 of the 5 upstream NTs are pyrimidines (Y, [TC])
+_splice_acceptors = [
+    re.compile(r"[TC][TC][TC]\w\w\wCAGG", re.UNICODE),
+    re.compile(r"[TC][TC]\w[TC]\w\wCAGG", re.UNICODE),
+    re.compile(r"[TC][TC]\w\w[TC]\wCAGG", re.UNICODE),
+    re.compile(r"[TC]\w[TC][TC]\w\wCAGG", re.UNICODE),
+    re.compile(r"[TC]\w[TC]\w[TC]\wCAGG", re.UNICODE),
+    re.compile(r"[TC]\w\w[TC][TC]\wCAGG", re.UNICODE),
+    re.compile(r"\w[TC][TC][TC]\w\wCAGG", re.UNICODE),
+    re.compile(r"\w[TC][TC]\w[TC]\wCAGG", re.UNICODE),
+    re.compile(r"\w[TC]\w[TC][TC]\wCAGG", re.UNICODE),
+    re.compile(r"\w\w[TC][TC][TC]\wCAGG", re.UNICODE),
+    re.compile(r"[TC][TC][TC]\w\w\w\wAGG", re.UNICODE),
+    re.compile(r"[TC][TC]\w[TC]\w\w\wAGG", re.UNICODE),
+    re.compile(r"[TC][TC]\w\w[TC]\w\wAGG", re.UNICODE),
+    re.compile(r"[TC]\w[TC][TC]\w\w\wAGG", re.UNICODE),
+    re.compile(r"[TC]\w[TC]\w[TC]\w\wAGG", re.UNICODE),
+    re.compile(r"[TC]\w\w[TC][TC]\w\wAGG", re.UNICODE),
+    re.compile(r"\w[TC][TC][TC]\w\w\wAGG", re.UNICODE),
+    re.compile(r"\w[TC][TC]\w[TC]\w\wAGG", re.UNICODE),
+    re.compile(r"\w[TC]\w[TC][TC]\w\wAGG", re.UNICODE),
+    re.compile(r"\w\w[TC][TC][TC]\w\wAGG", re.UNICODE),
+    re.compile(r"[TC][TC][TC]\w\w\wCAG\w", re.UNICODE),
+    re.compile(r"[TC][TC]\w[TC]\w\wCAG\w", re.UNICODE),
+    re.compile(r"[TC][TC]\w\w[TC]\wCAG\w", re.UNICODE),
+    re.compile(r"[TC]\w[TC][TC]\w\wCAG\w", re.UNICODE),
+    re.compile(r"[TC]\w[TC]\w[TC]\wCAG\w", re.UNICODE),
+    re.compile(r"[TC]\w\w[TC][TC]\wCAG\w", re.UNICODE),
+    re.compile(r"\w[TC][TC][TC]\w\wCAG\w", re.UNICODE),
+    re.compile(r"\w[TC][TC]\w[TC]\wCAG\w", re.UNICODE),
+    re.compile(r"\w[TC]\w[TC][TC]\wCAG\w", re.UNICODE),
+    re.compile(r"\w\w[TC][TC][TC]\wCAG\w", re.UNICODE),
+]
+
+
+def remove_splice_sites(dna_sequence, codon_use_table):
+    """Identify and remove RNA splice sites within a DNA sequence.
+
+    Args:
+        dna_sequence (Bio.Seq.Seq): A read-only representation of
+            the DNA sequence.
+        codon_use_table (dict{str, list[list, list]}): A dictionary with
+            each amino acid three-letter code as keys, and a list of two
+            lists as values. The first list is the synonymous codons that
+            encode the amino acid, the second is the frequency with which
+            each synonymouscodon is used.
+
+    Returns:
+        Bio.Seq.Seq: A read-only representation of the new DNA sequence.
+    """
+
+    def _pass_back_matches(list_of_sites, curr_dna):
+        dna = str(curr_dna)
+        sites = set(m for expr in list_of_sites for m in re.finditer(expr, dna))
+        try:
+            sites.remove(None)
+        except KeyError:
+            pass
+        # remove redundancy
+        sites = set((site.span(), site[0]) for site in sites)
+        codon_bounds = [
+            (s[0][0] // 3, -(-s[0][1] // 3)) for s in sorted(sites, key=lambda x: x[0])
+        ]
+        return codon_bounds
+
+    def _get_splice_sites(curr_dna):
+        donor_sites = _pass_back_matches(_splice_donors, curr_dna)
+        acceptor_sites = _pass_back_matches(_splice_acceptors, curr_dna)
+        return set(donor_sites + acceptor_sites)
+
+    mutable_seq = dna_sequence.tomutable()
+
+    keep_looping = True
+    n_times_through_unchanged = 0
+    prev_seq = ""
+    while keep_looping:
+        # look for donor and acceptor seqs
+        splice_sites = _get_splice_sites(mutable_seq)
+
+        logger.info("Removing RNA splice site donors and acceptors.")
+        for site_bounds in splice_sites:
+            site_removed = False
+
+            codon_list = list(range(site_bounds[0], site_bounds[-1] + 1))
+            random.shuffle(codon_list)
+
+            indices = [slice(cdn * 3, (cdn + 1) * 3) for cdn in codon_list]
+            init_codons = [mutable_seq[idx] for idx in indices]
+
+            AAs = [
+                seq3(CodonTable.standard_dna_table.forward_table[str(init)]).upper()
+                for init in init_codons
+            ]
+            synonymous_codons = [codon_use_table[AA][0] for AA in AAs]
+            substitutions = list(product(*synonymous_codons))
+            random.shuffle(substitutions)
+
+            for substitution in substitutions:
+                for idx, codon in zip(indices, substitution):
+                    mutable_seq[idx] = codon
+                curr_sites = _get_splice_sites(mutable_seq)
+                if site_bounds in curr_sites or len(curr_sites) >= len(splice_sites):
+                    # put the starting sequence back
+                    for idx, init_codon in zip(indices, init_codons):
+                        mutable_seq[idx] = init_codon
+                else:
+                    site_removed = True
+                    logger.detail("Removed site ({})!".format(site_bounds))
+                    logger.detail("Remaining sites:\n" + curr_sites)
+                    break
+
+            if site_removed:
+                break
+
+        remaining_sites = _get_splice_sites(mutable_seq)
+        n_times_through_unchanged += int(str(mutable_seq) == prev_seq)
+        prev_seq = str(mutable_seq)
+
+        if not len(remaining_sites) or n_times_through_unchanged == 5:
+            keep_looping = False
 
     return mutable_seq.toseq()

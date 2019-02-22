@@ -161,6 +161,7 @@ def main(argv=None):
                     dna = seq_opt.remove_restriction_sites(
                         dna, codon_use_table, rest_enz
                     )
+                dna = seq_opt.remove_splice_sites(dna, codon_use_table)
 
             # measure the deviation from the host profile post-cleanup
             # only move forward if we haven't deviated too much from host

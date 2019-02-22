@@ -779,7 +779,7 @@ def remove_splice_sites(dna_sequence, codon_use_table):
             random.shuffle(codon_list)
 
             indices = [slice(cdn * 3, (cdn + 1) * 3) for cdn in codon_list]
-            init_codons = [mutable_seq[idx] for idx in indices]
+            init_codons = [mutable_seq[idx] for idx in indices if str(mutable_seq[idx])]
 
             AAs = [
                 seq3(CodonTable.standard_dna_table.forward_table[str(init)]).upper()

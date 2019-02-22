@@ -800,7 +800,9 @@ def remove_splice_sites(dna_sequence, codon_use_table):
                 else:
                     site_removed = True
                     logger.detail("Removed site ({})!".format(site_bounds))
-                    logger.detail("Remaining sites:\n" + curr_sites)
+                    logger.detail(
+                        "Remaining sites:\n" + "\n".join([str(s) for s in curr_sites])
+                    )
                     break
 
             if site_removed:

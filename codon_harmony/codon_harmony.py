@@ -194,7 +194,7 @@ def main(argv=None):
             continue
 
         logger.output("Detecting and removing splice sites before outputting.")
-        best_dna = seq_opt.remove_splice_sites(best_dna, codon_use_table)
+        best_dna.seq = seq_opt.remove_splice_sites(best_dna.seq, codon_use_table)
 
         logger.output("Optimized gene metrics and sequence")
         # check GC content

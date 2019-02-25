@@ -16,7 +16,7 @@ def get_parser():
     parser = argparse.ArgumentParser(
         description="Reverse translate your amino acid sequence harmoniously with "
         + "a host's condon usage.",
-        epilog="v0.9.4 (contact yhsia@uw.edu or bweitzner@lyellbio.com if you "
+        epilog="v0.9.5-dev0 (contact yhsia@uw.edu or bweitzner@lyellbio.com if you "
         + "encounter errors)",
     )
     parser.add_argument(
@@ -192,6 +192,9 @@ def main(argv=None):
                 )
             )
             continue
+
+        logger.output("Detecting and removing splice sites before outputting.")
+        best_dna.seq = seq_opt.remove_splice_sites(best_dna.seq, codon_use_table)
 
         logger.output("Optimized gene metrics and sequence")
         # check GC content

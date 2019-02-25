@@ -230,3 +230,51 @@ class TestCodon_harmony_util_seq_opt(unittest.TestCase):
         )
         proc_dna = seq_opt.remove_hairpins(test_dna, self.codon_use_table)
         assert proc_dna != self.test_dna
+
+    def test_remove_splice_sites(self):
+        """Test `codon_harmony.uti.seq_opt.remove_splice_sites`"""
+        known_donors = [
+            "CGGTGAAT",
+            "AAGTACGG",
+            "CTGTGAGT",
+            "TAGTGTGT",
+            "TGGTCAGT",
+            "AGGTGAAA",
+            "GGGTGAGC",
+            "AGGTACCT",
+            "TGGTTAGA",
+        ]
+
+        known_acceptors = [
+            "CTGCTACAGC",
+            "GACCCACAGG",
+            "CTGATTCAGG",
+            "CTCTTGCAGT",
+            "TCTGGTTAGA",
+        ]
+
+        dna_sequence = Seq(
+            "ATGACAGCCAAGATGGAGACCACATTCTATGACGACGCCCTGAATGCTTCCTTCCTTCCCAGTGA"
+            + "GTCTGGACCATACGGCTATTCTAATCCCAAAATCCTGAAGCAGTCCATGACACTGAACCTCGC"
+            + "CGACCCCGTGGGCTCCCTTAAACCGCATCTCAGAGCTAAGAATTCCGACCTGCTTACTTCTCC"
+            + "TGATGTGGGACTCCTGAAGCTCGCCAGCCCCGAGCTTGAACGGCTGATTATTCAGAGCTCCAA"
+            + "TGGACACATCACCACCACTCCAACTCCCACACAGTTCCTGTGTCCCAAGAACGTTACCGACGA"
+            + "GCAGGAGGGCTTCGCCGAAGGCTTTGTGCGCGCACTGGCTGAGCTTCACAGTCAAAATACTCT"
+            + "GCCAAGCGTCACTTCTGCCGCCCAGCCTGTGAATGGAGCCGGGATGGTGGCACCTGCTGTTGC"
+            + "TTCTGTTGCCGGCGGCTCCGGGTCTGGAGGCTTCAGTGCTTCTCTCCACAGTGAGCCGCCTGT"
+            + "GTACGCTAACCTGTCCAACTTTAATCCTGGCGCTCTTAGCAGTGGCGGAGGCGCTCCTAGCTA"
+            + "CGGGGCCGCAGGCCTCGCTTTTCCTGCCCAGCCACAGCAACAGCAGCAACCACCACATCATCT"
+            + "GCCTCAGCAGATGCCAGTCCAACACCCACGCCTCCAGGCTCTGAAGGAGGAGCCTCAGACAGT"
+            + "CCCTGAAATGCCTGGAGAAACCCCTCCACTCTCCCCAATCGATATGGAGAGCCAGGAACGGAT"
+            + "CAAGGCAGAACGCAAGCGGATGAGGAATAGGATCGCCGCATCCAAGTGCCGCAAACGCAAGCT"
+            + "GGAGCGGATTGCCCGGCTGGAGGAGAAGGTTAAAACCCTGAAGGCTCAAAACAGCGAGCTGGC"
+            + "CTCTACCGCTAATATGCTTCGCGAGCAGGTTGCACAGCTCAAGCAGAAAGTGATGAACCACGT"
+            + "CAACTCTGGATGCCAGCTCATGCTGACACAGCAGCTGCAAACATTCGGCAGTGGGGCAACCAA"
+            + "CTTTTCCCTGCTGAAACAGGCCGGGGATGTTGAGGAGAACCCTGGTCCA",
+            IUPAC.unambiguous_dna,
+        )
+        dna_sequence = seq_opt.remove_splice_sites(dna_sequence, self.codon_use_table)
+        dna_sequence = str(dna_sequence)
+
+        for site in known_donors + known_acceptors:
+            assert site not in dna_sequence

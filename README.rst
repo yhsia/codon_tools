@@ -5,6 +5,10 @@ Codon Harmony
 
 .. image:: https://img.shields.io/pypi/v/codon_harmony.svg
         :target: https://pypi.python.org/pypi/codon_harmony
+        
+.. image:: https://img.shields.io/badge/License-MIT-yellow.svg
+        :target: https://opensource.org/licenses/MIT
+        :alt: MIT License
 
 .. image:: https://img.shields.io/travis/weitzner/codon_harmony.svg
         :target: https://travis-ci.org/weitzner/codon_harmony
@@ -33,8 +37,7 @@ Species-specifc data can be found on the `Codon Usage Database`_ using the `NCBI
 .. _`NCBI Taxonomy database`: http://www.ncbi.nlm.nih.gov/taxonomy
 .. _here: https://www.ncbi.nlm.nih.gov/Taxonomy/TaxIdentifier/tax_identifier.cgi
 
-* Free software: MIT license
-* Documentation: https://codon-harmony.readthedocs.io.
+* Documentation: https://codon-harmony.readthedocs.io
 
 
 Features
@@ -53,6 +56,7 @@ Features
    * 3-consecutive identical codons and 9-mer repeat chunks
    * areas with more than 4 (variable) consecutive identical bps ("local homopolymers")
    * RNA hairpins, detected by looking for 10-mers with reverse complements (including wobble bases) in the sequence
+   * RNA splice sites, detected by similarity to consensus donor and acceptor site sequences
    
 The process is repeated from step 3 for a specified number of cycles (defaults to 1000) OR until the per-AA codon profile of current DNA and host profile matches (within tolerance).
 
@@ -63,7 +67,6 @@ Future work
 
   * CONTRAfold_ – overkill for now
   * nupack_ – overkill for now
-- Predicted splice site removal
 
 .. _CONTRAfold: http://contra.stanford.edu/contrafold/
 .. _nupack: http://nupack.org

@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 import argparse
+import multiprocessing
 import random
 import sys
 
@@ -10,6 +11,8 @@ from Bio.SeqUtils import GC
 
 from .util import codon_use, logging, log_levels, seq_opt
 from .data import GC_content, RibosomeBindingSites, RestrictionEnzymes
+
+logger = logging.getLogger(__name__)
 
 
 def get_parser():
@@ -83,6 +86,155 @@ def get_parser():
     return parser
 
 
+def _harmonize_sequence(
+    seq_record,
+    args,
+    codon_use_table,
+    host_profile,
+    codon_relative_adativeness,
+    rest_enz,
+    seq_no=0,
+):
+    """Convert an amino acid sequence to DNA and optimize it to be synthesizable
+    and to match a host codon usage profile.
+
+    Args:
+        seq_record (Bio.SeqRecord.SeqRecord): The amino acid sequence to be
+            reverse translated and optimized.
+        args ([type]): A namespace populated with attributes from the
+            command line argument parser.
+        codon_use_table (dict{str, list[list, list]}): A dictionary with
+            each amino acid three-letter code as keys, and a list of two
+            lists as values. The first list is the synonymous codons that
+            encode the amino acid, the second is the frequency with which
+            each synonymous codon is used.
+        host_profile (dict{str, int}): A dictionary with codons as keys
+            and the corresponding frequency of occurences as values.
+        codon_relative_adativeness (Bio.SeqUtils.CodonUsage.CodonAdaptationIndex):
+            A `CodonAdaptationIndex` instance configured to calculate CAI
+            for a target gene.
+        rest_enz (Bio.Restriction.Restriction.RestrictionBatch):
+            RestrictionBatch instance configured with the input restriction
+            enzymes.
+        seq_no (int, optional): The number of the sequence in the input file.
+            Used for logging purposes. Defaults to 0.
+
+    Returns:
+        str: The optimized DNA sequence in FASTA format.
+    """
+    logger.info(
+        "Processing sequence number {}:\n{}".format(
+            seq_no + 1, seq_record.format("fasta")
+        )
+    )
+
+    dna = seq_record.seq.back_translate()
+    logger.detail(
+        "Initial DNA sequence:\n{}".format(
+            SeqRecord(dna, id=seq_record.id).format("fasta")
+        )
+    )
+
+    # intialize bookkeeping variables
+    best_cai, best_dna = 0.0, ""
+
+    args.cycles = 1 if args.cycles == 0 else args.cycles
+    args.inner_cycles = 1 if args.inner_cycles == 0 else args.inner_cycles
+
+    # run `args.cycles` independent trials
+    for sample_no in range(args.cycles):
+        logger.info("Current sample no: {}/{}".format(sample_no + 1, args.cycles))
+
+        # relax harmonization requirement
+        relax = 1 + (args.max_relax * ((sample_no + 1) / (args.cycles)))
+        dna = seq_opt.resample_codons_and_enforce_host_profile(
+            dna, codon_use_table, host_profile, relax
+        )
+
+        # go through a few cycles with the same starting sequence to
+        # allow iterative improvements to the same sample of codons
+        for _ in range(args.inner_cycles):
+            # identify and remove undesirable features
+            for gc_content in GC_content:
+                # check various GC content requirements
+                dna = seq_opt.gc_scan(dna, codon_use_table, gc_content)
+
+            dna = seq_opt.remove_start_sites(dna, codon_use_table, RibosomeBindingSites)
+            dna = seq_opt.remove_repeating_sequences(dna, codon_use_table, 9)
+            dna = seq_opt.remove_local_homopolymers(
+                dna,
+                codon_use_table,
+                n_codons=2,
+                homopolymer_threshold=args.local_homopolymer_threshold,
+            )
+            dna = seq_opt.remove_hairpins(dna, codon_use_table, stem_length=10)
+            if len(rest_enz):
+                dna = seq_opt.remove_restriction_sites(dna, codon_use_table, rest_enz)
+
+        # measure the deviation from the host profile post-cleanup
+        # only move forward if we haven't deviated too much from host
+        _, difference = seq_opt.compare_profiles(
+            codon_use.count_codons(dna), host_profile, relax
+        )
+        if difference >= args.max_relax:
+            continue
+
+        # if the codon adaptation index is better than what we've
+        # seen so far, store this sequence
+        cai = codon_relative_adativeness.cai_for_gene(str(dna))
+        if cai > best_cai:
+            best_cai = cai
+            best_dna = SeqRecord(
+                dna,
+                id=seq_record.id,
+                name=seq_record.name,
+                description=seq_record.description,
+            )
+
+    logger.info(
+        "Completed {} independent codon samples with optimization!".format(args.cycles)
+    )
+
+    if isinstance(best_dna, str):
+        logger.warning(
+            "Unable to create suitable DNA sequence for input sequence {}.\n{}".format(
+                seq_no + 1, seq_record.format("fasta")
+            )
+        )
+        return best_dna
+
+    logger.output("Detecting and removing splice sites before outputting.")
+    best_dna.seq = seq_opt.remove_splice_sites(best_dna.seq, codon_use_table)
+
+    logger.output("Optimized gene metrics and sequence")
+    # check GC content
+    gc_frac = GC(best_dna.seq) / 100
+    logger.output("Final overall GC content is {:.0%}".format(gc_frac))
+    if gc_frac < 0.3 or gc_frac > 0.65:
+        logger.warning(
+            "The sequence's GC content ({:.2f}) is beyond normal ranges (0.3 > GC < 0.65)!".format(
+                gc_frac
+            )
+        )
+
+    # measure the final deviation from the host profile
+    _, difference = seq_opt.compare_profiles(
+        codon_use.count_codons(best_dna.seq), host_profile, relax
+    )
+
+    logger.output(
+        "Final codon-use difference between host and current sequence: {:.2f}".format(
+            difference
+        )
+    )
+
+    best_dna_fasta = best_dna.format("fasta")
+    logger.output(
+        "The designed gene's CAI is: {:.2f}\n{}".format(best_cai, best_dna_fasta)
+    )
+    return best_dna_fasta
+
+
 def main(argv=None):
     """Read in a fasta-formatted file containing amino acid sequences and
     reverse translate each of them in accordance with a specified host's
@@ -91,7 +243,6 @@ def main(argv=None):
     """
     args = get_parser().parse_args(argv)
     logging.basicConfig(level=log_levels[args.verbose])
-    logger = logging.getLogger(__name__)
 
     random.seed()
     logger.info("Beginning codon use optimization")
@@ -109,118 +260,14 @@ def main(argv=None):
 
     # process through all supplied sequences
     for seq_no, record in enumerate(SeqIO.parse(args.input, "fasta", IUPAC.protein)):
-        logger.info(
-            "Processing sequence number {}:\n{}".format(
-                seq_no + 1, record.format("fasta")
-            )
-        )
-
-        dna = record.seq.back_translate()
-        logger.detail(
-            "Initial DNA sequence:\n{}".format(
-                SeqRecord(dna, id=record.id).format("fasta")
-            )
-        )
-
-        # intialize bookkeeping variables
-        best_cai, best_dna = 0.0, ""
-
-        args.cycles = 1 if args.cycles == 0 else args.cycles
-        args.inner_cycles = 1 if args.inner_cycles == 0 else args.inner_cycles
-
-        # run `args.cycles` independent trials
-        for sample_no in range(args.cycles):
-            logger.info("Current sample no: {}/{}".format(sample_no + 1, args.cycles))
-
-            # relax harmonization requirement
-            relax = 1 + (args.max_relax * ((sample_no + 1) / (args.cycles)))
-            dna = seq_opt.resample_codons_and_enforce_host_profile(
-                dna, codon_use_table, host_profile, relax
-            )
-
-            # go through a few cycles with the same starting sequence to
-            # allow iterative improvements to the same sample of codons
-            for _ in range(args.inner_cycles):
-                # identify and remove undesirable features
-                for gc_content in GC_content:
-                    # check various GC content requirements
-                    dna = seq_opt.gc_scan(dna, codon_use_table, gc_content)
-
-                dna = seq_opt.remove_start_sites(
-                    dna, codon_use_table, RibosomeBindingSites
-                )
-                dna = seq_opt.remove_repeating_sequences(dna, codon_use_table, 9)
-                dna = seq_opt.remove_local_homopolymers(
-                    dna,
-                    codon_use_table,
-                    n_codons=2,
-                    homopolymer_threshold=args.local_homopolymer_threshold,
-                )
-                dna = seq_opt.remove_hairpins(dna, codon_use_table, stem_length=10)
-                if len(rest_enz):
-                    dna = seq_opt.remove_restriction_sites(
-                        dna, codon_use_table, rest_enz
-                    )
-
-            # measure the deviation from the host profile post-cleanup
-            # only move forward if we haven't deviated too much from host
-            _, difference = seq_opt.compare_profiles(
-                codon_use.count_codons(dna), host_profile, relax
-            )
-            if difference >= args.max_relax:
-                continue
-
-            # if the codon adaptation index is better than what we've
-            # seen so far, store this sequence
-            cai = codon_relative_adativeness.cai_for_gene(str(dna))
-            if cai > best_cai:
-                best_cai = cai
-                best_dna = SeqRecord(
-                    dna, id=record.id, name=record.name, description=record.description
-                )
-
-        logger.info(
-            "Completed {} independent codon samples with optimization!".format(
-                args.cycles
-            )
-        )
-
-        if isinstance(best_dna, str):
-            logger.warning(
-                "Unable to create suitable DNA sequence for input sequence {}.\n{}".format(
-                    seq_no + 1, record.format("fasta")
-                )
-            )
-            continue
-
-        logger.output("Detecting and removing splice sites before outputting.")
-        best_dna.seq = seq_opt.remove_splice_sites(best_dna.seq, codon_use_table)
-
-        logger.output("Optimized gene metrics and sequence")
-        # check GC content
-        gc_frac = GC(best_dna.seq) / 100
-        logger.output("Final overall GC content is {:.0%}".format(gc_frac))
-        if gc_frac < 0.3 or gc_frac > 0.65:
-            logger.warning(
-                "The sequence's GC content ({:.2f}) is beyond normal ranges (0.3 > GC < 0.65)!".format(
-                    gc_frac
-                )
-            )
-
-        # measure the final deviation from the host profile
-        _, difference = seq_opt.compare_profiles(
-            codon_use.count_codons(best_dna.seq), host_profile, relax
-        )
-
-        logger.output(
-            "Final codon-use difference between host and current sequence: {:.2f}".format(
-                difference
-            )
-        )
-
-        out_seqs.append(best_dna.format("fasta"))
-        logger.output(
-            "The designed gene's CAI is: {:.2f}\n{}".format(best_cai, out_seqs[-1])
+        _harmonize_sequence(
+            record,
+            args,
+            codon_use_table,
+            host_profile,
+            codon_relative_adativeness,
+            rest_enz,
+            seq_no,
         )
 
     # write sequences to file

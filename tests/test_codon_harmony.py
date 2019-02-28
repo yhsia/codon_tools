@@ -30,7 +30,7 @@ class TestCodon_tools(unittest.TestCase):
         parsed_args = parser.parse_args(self.args_to_parse)
         assert parsed_args.input == "misc/INPUT_LIST.fasta"
         assert parsed_args.output == "out.fasta"
-        assert parsed_args.cycles == 100
+        assert parsed_args.cycles == 10
         assert parsed_args.host == "413997"
         assert parsed_args.host_threshold == 0.1
         assert parsed_args.inner_cycles == 10
@@ -46,6 +46,8 @@ class TestCodon_tools(unittest.TestCase):
             "BamHI",
         ]
         assert parsed_args.verbose == 0
+        assert parsed_args.splice_sites
+        assert parsed_args.start_sites
 
     def test_main(self):
         """Test `codon_harmony` main function"""

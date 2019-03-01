@@ -20,7 +20,7 @@ def get_parser():
     parser = argparse.ArgumentParser(
         description="Reverse translate your amino acid sequence harmoniously with "
         + "a host's condon usage.",
-        epilog="v0.9.6-dev0 (contact yhsia@uw.edu or bweitzner@lyellbio.com if you "
+        epilog="v0.9.6 (contact yhsia@uw.edu or bweitzner@lyellbio.com if you "
         + "encounter errors)",
     )
     parser.add_argument(

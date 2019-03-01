@@ -7,4 +7,4 @@ sphinx-argparse==0.2.5
 coverage==4.5.2
 codecov==2.0.15
 biopython==1.73
-python_codon_tables==0.1.6
+python_codon_tables==0.1.8

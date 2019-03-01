@@ -59,7 +59,7 @@ def get_parser():
     parser.add_argument(
         "--cycles",
         type=int,
-        default=100,
+        default=10,
         help="number of independent codon samples to run. 0 means 1 pass",
     )
     parser.add_argument(
@@ -83,6 +83,36 @@ def get_parser():
         help="list of restriction enzyme sites to remove "
         + "(e.g. --restriction_enzymes NdeI XhoI HpaI). ",
     )
+
+    splice_sites = parser.add_mutually_exclusive_group(required=False)
+    splice_sites.add_argument(
+        "--remove-splice-sites",
+        dest="splice_sites",
+        action="store_true",
+        help="Remove splice sites. Use for mammalian hosts.",
+    )
+    splice_sites.add_argument(
+        "--no-remove-splice-sites",
+        dest="splice_sites",
+        action="store_false",
+        help="Do not remove splice sites.",
+    )
+    parser.set_defaults(splice_sites=True)
+
+    start_sites = parser.add_mutually_exclusive_group(required=False)
+    start_sites.add_argument(
+        "--remove-start-sites",
+        dest="start_sites",
+        action="store_true",
+        help="Remove alternate start sites. Use for bacterial hosts.",
+    )
+    start_sites.add_argument(
+        "--no-remove-start-sites",
+        dest="start_sites",
+        action="store_false",
+        help="Do not remove alternate start sites.",
+    )
+    parser.set_defaults(start_sites=True)
 
     return parser
 
@@ -160,7 +190,9 @@ def _harmonize_sequence(
                 # check various GC content requirements
                 dna = seq_opt.gc_scan(dna, codon_use_table, gc_content)
 
-            dna = seq_opt.remove_start_sites(dna, codon_use_table, RibosomeBindingSites)
+            if args.start_sites:
+                dna = seq_opt.remove_start_sites(dna, codon_use_table, RibosomeBindingSites)
+                
             dna = seq_opt.remove_repeating_sequences(dna, codon_use_table, 9)
             dna = seq_opt.remove_local_homopolymers(
                 dna,
@@ -204,8 +236,9 @@ def _harmonize_sequence(
         )
         return best_dna
 
-    logger.output("Detecting and removing splice sites before outputting.")
-    best_dna.seq = seq_opt.remove_splice_sites(best_dna.seq, codon_use_table)
+    if args.splice_sites:
+        logger.output("Detecting and removing splice sites before outputting.")
+        best_dna.seq = seq_opt.remove_splice_sites(best_dna.seq, codon_use_table)
 
     logger.output("Optimized gene metrics and sequence")
     # check GC content

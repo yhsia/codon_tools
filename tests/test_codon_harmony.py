@@ -109,8 +109,7 @@ class TestCodon_tools(unittest.TestCase):
             dna_sequence = codon_harmony._harmonize_sequence(
                 seq_record, args, cut, hp, cra, rest_enz
             )
-        print()
-        print(dna_sequence)
-        label, seq = dna_sequence.strip().split("\n")
+
+        label, seq = dna_sequence["dna"].strip().split("\n")
         assert label == ">{} {}".format(seq_record.id, seq_record.description)
         assert Seq(seq, IUPAC.unambiguous_dna).translate() == seq_record.seq

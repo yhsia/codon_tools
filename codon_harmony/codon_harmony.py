@@ -191,8 +191,10 @@ def _harmonize_sequence(
                 dna = seq_opt.gc_scan(dna, codon_use_table, gc_content)
 
             if args.start_sites:
-                dna = seq_opt.remove_start_sites(dna, codon_use_table, RibosomeBindingSites)
-                
+                dna = seq_opt.remove_start_sites(
+                    dna, codon_use_table, RibosomeBindingSites
+                )
+
             dna = seq_opt.remove_repeating_sequences(dna, codon_use_table, 9)
             dna = seq_opt.remove_local_homopolymers(
                 dna,

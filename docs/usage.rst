@@ -20,10 +20,12 @@ contents of ``misc/INPUT_LIST.fasta``:
 
 .. code-block:: text
 
-  >SEQ_1
+  >test_sequence1|can be optimized with `max_relax` set to 0.1
+  HHHHHHHHHH
+  >test_sequence2|cannot be optimized with `max_relax` set to 0.1
   ACDEFGHIKLMNPQRSTVWY
-  >SEQ_2
-  ACDEFGHIKLMNPQRSTVWY
+  >test_sequence3|can be optimized with `max_relax` set to 0.1, has extreme GC content
+  FFFFFFFFFFFF
 
 Using Codon Harmony in a project
 --------------------------------

@@ -151,7 +151,10 @@ def _harmonize_sequence(
             Used for logging purposes. Defaults to 0.
 
     Returns:
-        str: The optimized DNA sequence in FASTA format.
+        dict{str, str}: A dictionary with "protein" or "dna" as a key, and the
+        input protein- or optimized DNA-sequence in FASTA format as a value. The
+        protein sequence is returned if the function cannot satisify the
+        harmonization requirements.
     """
     logger.info(
         "Processing sequence number {}:\n{}".format(
@@ -236,7 +239,7 @@ def _harmonize_sequence(
                 seq_no + 1, seq_record.format("fasta")
             )
         )
-        return best_dna
+        return {"protein": seq_record.format("fasta")}
 
     if args.splice_sites:
         logger.output("Detecting and removing splice sites before outputting.")
@@ -268,7 +271,7 @@ def _harmonize_sequence(
     logger.output(
         "The designed gene's CAI is: {:.2f}\n{}".format(best_cai, best_dna_fasta)
     )
-    return best_dna_fasta
+    return {"dna": best_dna_fasta}
 
 
 def main(argv=None):
@@ -325,6 +328,22 @@ def main(argv=None):
             else:
                 break
 
+    dna_seqs = "".join([seq["dna"] for seq in out_seqs if "dna" in seq])
+    failed_seqs = "".join([seq["protein"] for seq in out_seqs if "protein" in seq])
+
     # write sequences to file
     with open(args.output, "w") as f:
-        f.write("".join(out_seqs))
+        f.write(dna_seqs)
+
+    if failed_seqs:
+        logger.warning(
+            "Unable to create suitable DNA sequence for one or more input sequences.\n{}".format(
+                failed_seqs
+            )
+        )
+        logger.warning(
+            'Writing failed sequences to "failed_seqs.fasta". '
+            "Try re-running with a higher value for --max-relax"
+        )
+        with open("failed_seqs.fasta", "w") as f:
+            f.write(failed_seqs)

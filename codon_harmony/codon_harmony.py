@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 import argparse
+import itertools
 import multiprocessing
 import random
 import sys
@@ -258,17 +259,36 @@ def main(argv=None):
     # initialize the restriction sites of interest
     rest_enz = RestrictionEnzymes(args.restriction_enzymes)
 
-    # process through all supplied sequences
-    for seq_no, record in enumerate(SeqIO.parse(args.input, "fasta", IUPAC.protein)):
-        _harmonize_sequence(
-            record,
-            args,
-            codon_use_table,
-            host_profile,
-            codon_relative_adativeness,
-            rest_enz,
-            seq_no,
-        )
+    def _input_prep():
+        """Read in all supplied sequences and prepare args for the
+        ``_harmonize_sequence`` function
+        """
+        for seq_no, record in enumerate(
+            SeqIO.parse(args.input, "fasta", IUPAC.protein)
+        ):
+            yield (
+                record,
+                args,
+                codon_use_table,
+                host_profile,
+                codon_relative_adativeness,
+                rest_enz,
+                seq_no,
+            )
+
+    with multiprocessing.Pool() as pool:
+        input_iter = _input_prep()
+        # split input into chunks no larger than 3 x Ncpu
+        N = multiprocessing.cpu_count() * 3
+
+        # in principle, the number of sequences are in the fasta file is unknown, so
+        # go through it with an islice and break out when there are no more sequences
+        while True:
+            seqs = pool.starmap(_harmonize_sequence, itertools.islice(input_iter, N))
+            if seqs:
+                out_seqs.extend(seqs)
+            else:
+                break
 
     # write sequences to file
     with open(args.output, "w") as f:

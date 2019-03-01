@@ -72,7 +72,7 @@ class TestCodon_tools(unittest.TestCase):
         from codon_harmony.data import RestrictionEnzymes
 
         parser = codon_harmony.get_parser()
-        args = parser.parse_args(self.args_to_parse)
+        args = parser.parse_args(self.args_to_parse + ["--max-relax=0.2"])
 
         cut, hp, cra = codon_use.host_codon_usage(args.host, args.host_threshold)
         rest_enz = RestrictionEnzymes(args.restriction_enzymes)
@@ -87,6 +87,8 @@ class TestCodon_tools(unittest.TestCase):
         dna_sequence = codon_harmony._harmonize_sequence(
             seq_record, args, cut, hp, cra, rest_enz
         )
+        print()
+        print(dna_sequence)
         label, seq = dna_sequence.strip().split("\n")
         assert label == ">{} {}".format(seq_record.id, seq_record.description)
         assert Seq(seq, IUPAC.unambiguous_dna).translate() == seq_record.seq

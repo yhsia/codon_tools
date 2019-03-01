@@ -37,7 +37,7 @@ def get_parser():
         + '"Escherichia coli B"',
     )
     parser.add_argument(
-        "--host_threshold",
+        "--host-threshold",
         type=float,
         default="0.10",
         help="lowest codon fraction per AA in the host that is allowed",
@@ -51,7 +51,7 @@ def get_parser():
         + "2=extra output 3=debugging)",
     )
     parser.add_argument(
-        "--local_homopolymer_threshold",
+        "--local-homopolymer-threshold",
         type=int,
         default="4",
         help="number of consecutive NT repeats allowed",
@@ -63,20 +63,20 @@ def get_parser():
         help="number of independent codon samples to run. 0 means 1 pass",
     )
     parser.add_argument(
-        "--inner_cycles",
+        "--inner-cycles",
         type=int,
         default=10,
         help="number of times to iteratively optimize each independent codon"
         + " sample. 0 means 1 pass",
     )
     parser.add_argument(
-        "--max_relax",
+        "--max-relax",
         type=float,
         default="0.1",
         help="maximum percent deviation from host profile",
     )
     parser.add_argument(
-        "--restriction_enzymes",
+        "--restriction-enzymes",
         nargs="*",
         type=str,
         default="NdeI XhoI HpaI PstI EcoRV NcoI BamHI".split(),

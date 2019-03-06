@@ -68,20 +68,19 @@ def codon_tables(taxid, table_path=None):
         dict{str, float}: A dictionary with codons as keys and the frequency
         that the codon is used to encode its amino acid as values.
     """
-    try:
-        taxid = int(taxid)
-    except ValueError as exc:
-        taxid = _tax_id_from_species(taxid, exc)
-    logger.info("Downloading host table for NCBI taxonomy ID {}...".format(taxid))
-
-    return_dict = {}
     if table_path is None:
+        try:
+            taxid = int(taxid)
+        except ValueError as exc:
+            taxid = _tax_id_from_species(taxid, exc)
+        logger.info("Downloading host table for NCBI taxonomy ID {}...".format(taxid))
         codon_table_by_aa = pct.download_codons_table(taxid)
     else:
         # load table from disk -- JSON format
         with open(table_path, "r") as table:
             codon_table_by_aa = json.load(table)
 
+    return_dict = {}
     for _, codon_dict in codon_table_by_aa.items():
         for codon, frequency in codon_dict.items():
             return_dict[codon] = frequency

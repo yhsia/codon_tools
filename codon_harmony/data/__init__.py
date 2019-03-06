@@ -1,3 +1,4 @@
+import json
 import python_codon_tables as pct
 from collections import namedtuple
 from Bio import Entrez, Restriction
@@ -46,7 +47,7 @@ def _tax_id_from_species(species, exc=None):
     return taxid
 
 
-def codon_tables(taxid):
+def codon_tables(taxid, table_path=None):
     """Download the codon use table for the given species and return it as
     a dictionary.
 
@@ -55,6 +56,8 @@ def codon_tables(taxid):
 
     Args:
         taxid (int): NCBI taxonomy ID for the desrired species.
+        table_path (str): Defaults to None. Path to a JSON-formatted file representing the
+            codon usage to consider. If None, the table is fetched from the internet.
 
     Raises:
         ValueError: If the NCBI taxonomy ID is not associated with a codon
@@ -65,14 +68,19 @@ def codon_tables(taxid):
         dict{str, float}: A dictionary with codons as keys and the frequency
         that the codon is used to encode its amino acid as values.
     """
-    try:
-        taxid = int(taxid)
-    except ValueError as exc:
-        taxid = _tax_id_from_species(taxid, exc)
-    logger.info("Downloading host table for NCBI taxonomy ID {}...".format(taxid))
+    if table_path is None:
+        try:
+            taxid = int(taxid)
+        except ValueError as exc:
+            taxid = _tax_id_from_species(taxid, exc)
+        logger.info("Downloading host table for NCBI taxonomy ID {}...".format(taxid))
+        codon_table_by_aa = pct.download_codons_table(taxid)
+    else:
+        # load table from disk -- JSON format
+        with open(table_path, "r") as table:
+            codon_table_by_aa = json.load(table)
 
     return_dict = {}
-    codon_table_by_aa = pct.download_codons_table(taxid)
     for _, codon_dict in codon_table_by_aa.items():
         for codon, frequency in codon_dict.items():
             return_dict[codon] = frequency

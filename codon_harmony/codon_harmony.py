@@ -42,6 +42,12 @@ def get_parser():
         help="lowest codon fraction per AA in the host that is allowed",
     )
     parser.add_argument(
+        "--local-host-profile",
+        type=str,
+        default=None,
+        help="path to host codon usage table as JSON file",
+    )
+    parser.add_argument(
         "--verbose",
         type=int,
         default=0,
@@ -290,7 +296,7 @@ def main(argv=None):
 
     # generate host profile
     codon_use_table, host_profile, codon_relative_adativeness = codon_use.host_codon_usage(
-        args.host, args.host_threshold
+        args.host, args.host_threshold, args.local_host_profile
     )
 
     # initialize the restriction sites of interest

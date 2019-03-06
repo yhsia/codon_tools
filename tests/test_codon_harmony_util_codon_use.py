@@ -135,21 +135,27 @@ class TestCodon_harmony_util_codon_use(unittest.TestCase):
     def test_process_host_table(self):
         """Test `codon_harmony.util.codon_use.process_host_table`"""
         raw_table = codon_use._load_host_table(9606)
-        processed_table = codon_use.process_host_table(9606, threshold=0.0)
+        processed_table = codon_use.process_host_table(
+            9606, threshold=0.0, table_path=None
+        )
         self.assertAlmostEqual(processed_table, raw_table)
 
         thresholds = [0.1, 0.2]
         for thresh in thresholds:
             rare_codons = [codon for codon, freq in raw_table.items() if freq < thresh]
-            processed_table = codon_use.process_host_table(9606, threshold=thresh)
+            processed_table = codon_use.process_host_table(
+                9606, threshold=thresh, table_path=None
+            )
             for codon in rare_codons:
                 assert not processed_table[codon]
 
     def test_host_codon_usage(self):
         """Test `codon_harmony.util.codon_use.host_codon_usage`"""
-        processed_table = codon_use.process_host_table(9606, threshold=0.1)
+        processed_table = codon_use.process_host_table(
+            9606, threshold=0.1, table_path=None
+        )
         codon_use_by_aa, host_profile, cra = codon_use.host_codon_usage(
-            9606, threshold=0.1
+            9606, threshold=0.1, table_path=None
         )
         for AA, codon_freqs in codon_use_by_aa.items():
             self.assertAlmostEqual(sum(codon_freqs[-1]), 1.0)
@@ -166,7 +172,9 @@ class TestCodon_harmony_util_codon_use(unittest.TestCase):
         from codon_harmony.util import logging
 
         with self.assertLogs("codon_harmony.util.codon_use", level="DETAIL") as cm:
-            processed_table = codon_use.process_host_table(9606, threshold=0.0)
+            processed_table = codon_use.process_host_table(
+                9606, threshold=0.0, table_path=None
+            )
 
         assert (
             "DETAIL:codon_harmony.util.codon_use:Pre-threshold host table:" in cm.output

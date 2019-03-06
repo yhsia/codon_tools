@@ -65,6 +65,12 @@ class TestCodon_tools_data(unittest.TestCase):
         else:
             assert False
 
+    def test_codon_usage_from_local_table(self):
+        """Test loading a JSON-formatted codon usage table."""
+        table_path = "misc/human_codon_table.json"
+        from_file = data.codon_tables("irrelevant", table_path=table_path)
+        assert from_file["UUU"] == 0.46
+
     def test_restriction_enzymes(self):
         """Test creating RestrictionEnzymesBatch from a list of restriction enzymes"""
         list_of_res_enz = ["XhoI", "HpaI", "PstI", "EcoRV", "NcoI", "BamHI"]

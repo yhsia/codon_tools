@@ -95,10 +95,10 @@ def calc_codon_relative_adaptiveness(codons_count):
     return codon_adaptation_index
 
 
-def _load_host_table(host):
+def _load_host_table(host, table_path=None):
     table = CodonUsage.CodonsDict.copy()
 
-    raw_table = codon_tables(host)
+    raw_table = codon_tables(host, table_path)
     for codon, frequency in raw_table.items():
         # codons are stored with RNA alphabet
         table[str(Seq(codon).back_transcribe())] = frequency
@@ -106,7 +106,7 @@ def _load_host_table(host):
     return calc_profile(table)
 
 
-def process_host_table(host, threshold):
+def process_host_table(host, threshold, table_path):
     """Load the codon usage table for the desired host, filter codons with
     a lower occurence than the threshold, and renormalize the frequency of
     usage of each synonymous codon.
@@ -119,7 +119,7 @@ def process_host_table(host, threshold):
         dict{str, int}: A dictionary with codons as keys and the
         corresponding frequency of occurences as values.
     """
-    table = _load_host_table(host)
+    table = _load_host_table(host, table_path)
 
     logger.info("Host threshold set to: {}".format(threshold))
     logger.detail("Pre-threshold host table:")
@@ -144,7 +144,7 @@ def process_host_table(host, threshold):
     return table
 
 
-def host_codon_usage(host, threshold=0.10):
+def host_codon_usage(host, threshold=0.10, table_path=None):
     """Load and process the per amino acid codon usage for the desired host in
     accordance with the supplied threshold and configure a CodonAdaptationIndex
     instance to calculate CAI for a target gene.
@@ -171,7 +171,7 @@ def host_codon_usage(host, threshold=0.10):
         A `CodonAdaptationIndex` instance configured to calculate CAI for a
         target gene.
     """
-    host_profile = process_host_table(host, threshold)
+    host_profile = process_host_table(host, threshold, table_path)
     cra = calc_codon_relative_adaptiveness(host_profile)
 
     codon_use_by_aa = {}

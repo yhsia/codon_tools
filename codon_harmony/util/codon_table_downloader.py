@@ -26,4 +26,4 @@ def save_codon_table_to_disk(taxid, outfile):
             'Output file "{}" does not have a JSON file extension.'.format(outfile)
         )
     with open(outfile, "w") as of:
-        json.dump(of, codon_table_by_aa)
+        json.dump(codon_table_by_aa, of)

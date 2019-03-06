@@ -42,6 +42,12 @@ def get_parser():
         help="lowest codon fraction per AA in the host that is allowed",
     )
     parser.add_argument(
+        "--local-host-profile",
+        type=str,
+        default=None,
+        help="path to host codon usage table as JSON file",
+    )
+    parser.add_argument(
         "--verbose",
         type=int,
         default=0,

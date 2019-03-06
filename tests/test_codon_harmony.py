@@ -33,6 +33,7 @@ class TestCodon_tools(unittest.TestCase):
         assert parsed_args.cycles == 10
         assert parsed_args.host == "413997"
         assert parsed_args.host_threshold == 0.1
+        assert parsed_args.local_host_profile == None
         assert parsed_args.inner_cycles == 10
         assert parsed_args.local_homopolymer_threshold == 4
         assert parsed_args.max_relax == 0.1

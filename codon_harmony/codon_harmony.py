@@ -290,7 +290,7 @@ def main(argv=None):
 
     # generate host profile
     codon_use_table, host_profile, codon_relative_adativeness = codon_use.host_codon_usage(
-        args.host, args.host_threshold
+        args.host, args.host_threshold, args.local_host_profile
     )
 
     # initialize the restriction sites of interest

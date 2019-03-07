@@ -33,4 +33,4 @@ History
 
 * Added ability to use offline tables in addition to fetching from the internet
 * Full suite of tests and documentation
-* Tested on real-world sequences to
+* Tested on real-world sequences

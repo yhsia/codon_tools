@@ -20,7 +20,7 @@ def get_parser():
     parser = argparse.ArgumentParser(
         description="Reverse translate your amino acid sequence harmoniously with "
         + "a host's condon usage.",
-        epilog="v0.9.6 (contact bweitzner@lyellbio.com if you encounter errors)",
+        epilog="v1.0.0-dev0 (contact bweitzner@lyellbio.com if you encounter errors)",
     )
     parser.add_argument(
         "--input", type=str, required=True, help="input file with sequence"

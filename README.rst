@@ -10,19 +10,19 @@ Codon Harmony
         :target: https://opensource.org/licenses/MIT
         :alt: MIT License
 
-.. image:: https://img.shields.io/travis/weitzner/codon_harmony.svg
-        :target: https://travis-ci.org/weitzner/codon_harmony
+.. image:: https://img.shields.io/travis/lyellbio/codon-harmony.svg
+        :target: https://travis-ci.org/lyellbio/codon-harmony
 
 .. image:: https://readthedocs.org/projects/codon-harmony/badge/?version=latest
         :target: https://codon-harmony.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation status
 
-.. image:: https://codecov.io/gh/weitzner/codon_harmony/branch/master/graph/badge.svg
-        :target: https://codecov.io/gh/weitzner/codon_harmony
+.. image:: https://codecov.io/gh/lyellbio/codon-harmony/branch/master/graph/badge.svg
+        :target: https://codecov.io/gh/lyellbio/codon-harmony
         :alt: Coverage report
 
-.. image:: https://pyup.io/repos/github/weitzner/codon_harmony/shield.svg
-     :target: https://pyup.io/repos/github/weitzner/codon_harmony/
+.. image:: https://pyup.io/repos/github/lyellbio/codon-harmony/shield.svg
+     :target: https://pyup.io/repos/github/lyellbio/codon-harmony/
      :alt: Updates
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
